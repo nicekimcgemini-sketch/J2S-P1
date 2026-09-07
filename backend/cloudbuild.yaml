@@ -20,3 +20,5 @@ steps:
       - '--quiet'
 images:
   - 'asia-northeast3-docker.pkg.dev/j2s-p1-attendance/cloud-run-source-deploy/j2s-backend'
+options:
+  logging: CLOUD_LOGGING_ONLY
