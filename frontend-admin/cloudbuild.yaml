@@ -3,9 +3,22 @@ steps:
     args:
       - build
       - '--build-arg'
-      - 'VITE_API_URL=${_VITE_API_URL}'
+      - 'VITE_API_URL=https://j2s-backend-401796347608.asia-northeast3.run.app/api'
       - '-t'
-      - '${_IMAGE}'
+      - 'asia-northeast3-docker.pkg.dev/j2s-p1-attendance/cloud-run-source-deploy/j2s-frontend'
       - '.'
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - 'asia-northeast3-docker.pkg.dev/j2s-p1-attendance/cloud-run-source-deploy/j2s-frontend'
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - j2s-frontend
+      - '--image=asia-northeast3-docker.pkg.dev/j2s-p1-attendance/cloud-run-source-deploy/j2s-frontend'
+      - '--region=asia-northeast3'
+      - '--quiet'
 images:
-  - '${_IMAGE}'
+  - 'asia-northeast3-docker.pkg.dev/j2s-p1-attendance/cloud-run-source-deploy/j2s-frontend'

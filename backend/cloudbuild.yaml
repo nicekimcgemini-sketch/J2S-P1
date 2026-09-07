@@ -1,0 +1,22 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - '-t'
+      - 'asia-northeast3-docker.pkg.dev/j2s-p1-attendance/cloud-run-source-deploy/j2s-backend'
+      - '.'
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - 'asia-northeast3-docker.pkg.dev/j2s-p1-attendance/cloud-run-source-deploy/j2s-backend'
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - j2s-backend
+      - '--image=asia-northeast3-docker.pkg.dev/j2s-p1-attendance/cloud-run-source-deploy/j2s-backend'
+      - '--region=asia-northeast3'
+      - '--quiet'
+images:
+  - 'asia-northeast3-docker.pkg.dev/j2s-p1-attendance/cloud-run-source-deploy/j2s-backend'
