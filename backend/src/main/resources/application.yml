@@ -18,17 +18,15 @@ spring:
         format_sql: true
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 app:
   qr:
     expiry-seconds: 60
   jwt:
-    secret: j2s-attendance-secret-key-must-be-at-least-256-bits-long-for-security
+    secret: ${JWT_SECRET:j2s-attendance-secret-key-must-be-at-least-256-bits-long-for-security}
   cors:
-    allowed-origins:
-      - http://localhost:3000
-      - http://localhost:5173
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
 
 logging:
   level:
