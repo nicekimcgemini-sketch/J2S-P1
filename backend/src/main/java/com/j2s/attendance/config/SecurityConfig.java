@@ -30,6 +30,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/error").permitAll()                   // 에러 응답 렌더링용 내부 forward (없으면 401로 가려짐)
                 .requestMatchers("/api/devices/**").permitAll()          // 기기 등록/상태조회는 인증 불필요
                 .requestMatchers("/api/attendance/**").permitAll()       // 출퇴근 체크는 기기ID로 검증
                 .requestMatchers("/api/qr/**").permitAll()               // QR 생성은 IP 필터로 제어
