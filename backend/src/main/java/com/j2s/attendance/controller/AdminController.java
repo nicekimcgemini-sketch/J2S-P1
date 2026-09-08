@@ -3,8 +3,10 @@ package com.j2s.attendance.controller;
 import com.j2s.attendance.dto.AttendanceLogDto;
 import com.j2s.attendance.entity.Device;
 import com.j2s.attendance.entity.DeviceStatus;
+import com.j2s.attendance.entity.IpWhitelist;
 import com.j2s.attendance.service.AttendanceService;
 import com.j2s.attendance.service.DeviceService;
+import com.j2s.attendance.service.IpWhitelistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +27,34 @@ public class AdminController {
 
     private final DeviceService deviceService;
     private final AttendanceService attendanceService;
+    private final IpWhitelistService ipWhitelistService;
+
+    // 로그인 확인용 (프론트에서 계정/비번 검증 목적으로 호출)
+    @GetMapping("/me")
+    public ResponseEntity<Void> me() {
+        return ResponseEntity.ok().build();
+    }
+
+    // 허용 IP 목록 조회
+    @GetMapping("/ip-whitelist")
+    public ResponseEntity<List<IpWhitelist>> getIpWhitelist() {
+        return ResponseEntity.ok(ipWhitelistService.getAll());
+    }
+
+    // 허용 IP 추가
+    @PostMapping("/ip-whitelist")
+    public ResponseEntity<IpWhitelist> addIpWhitelist(@RequestBody IpWhitelistRequest request) {
+        return ResponseEntity.ok(ipWhitelistService.add(request.ipAddress(), request.description()));
+    }
+
+    // 허용 IP 삭제
+    @DeleteMapping("/ip-whitelist/{id}")
+    public ResponseEntity<Void> removeIpWhitelist(@PathVariable Long id) {
+        ipWhitelistService.remove(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    public record IpWhitelistRequest(String ipAddress, String description) {}
 
     // 전체 기기 목록 조회
     @GetMapping("/devices")

@@ -1,12 +1,35 @@
 import axios from 'axios';
 
+const AUTH_STORAGE_KEY = 'admin_auth';
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api',
-  auth: {
-    username: import.meta.env.VITE_ADMIN_USER ?? 'admin',
-    password: import.meta.env.VITE_ADMIN_PASS ?? 'admin1234',
-  },
 });
+
+api.interceptors.request.use((config) => {
+  const stored = sessionStorage.getItem(AUTH_STORAGE_KEY);
+  if (stored) {
+    config.headers.Authorization = `Basic ${stored}`;
+  }
+  return config;
+});
+
+export const authApi = {
+  isLoggedIn: () => sessionStorage.getItem(AUTH_STORAGE_KEY) !== null,
+
+  login: async (username: string, password: string): Promise<boolean> => {
+    const encoded = btoa(`${username}:${password}`);
+    try {
+      await api.get('/admin/me', { headers: { Authorization: `Basic ${encoded}` } });
+      sessionStorage.setItem(AUTH_STORAGE_KEY, encoded);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
+  logout: () => sessionStorage.removeItem(AUTH_STORAGE_KEY),
+};
 
 export interface Device {
   id: number;
@@ -28,6 +51,13 @@ export interface AttendanceLog {
   checkedAt: string;
 }
 
+export interface IpWhitelistEntry {
+  id: number;
+  ipAddress: string;
+  description: string | null;
+  createdAt: string;
+}
+
 export const deviceApi = {
   getAll: () => api.get<Device[]>('/admin/devices').then(r => r.data),
   getPending: () => api.get<Device[]>('/admin/devices/pending').then(r => r.data),
@@ -40,6 +70,13 @@ export const attendanceApi = {
     api.get<AttendanceLog[]>('/admin/attendance/logs', {
       params: { date, companyId },
     }).then(r => r.data),
+};
+
+export const ipWhitelistApi = {
+  getAll: () => api.get<IpWhitelistEntry[]>('/admin/ip-whitelist').then(r => r.data),
+  add: (ipAddress: string, description: string) =>
+    api.post<IpWhitelistEntry>('/admin/ip-whitelist', { ipAddress, description }).then(r => r.data),
+  remove: (id: number) => api.delete(`/admin/ip-whitelist/${id}`),
 };
 
 export const qrApi = {
