@@ -30,7 +30,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/devices/register").permitAll()   // 기기 등록은 인증 불필요
+                .requestMatchers("/api/devices/**").permitAll()          // 기기 등록/상태조회는 인증 불필요
                 .requestMatchers("/api/attendance/**").permitAll()       // 출퇴근 체크는 기기ID로 검증
                 .requestMatchers("/api/qr/**").permitAll()               // QR 생성은 IP 필터로 제어
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")

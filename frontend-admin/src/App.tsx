@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Link, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import QrScreen from './pages/QrScreen';
+import CheckIn from './pages/CheckIn';
 import DeviceManagement from './pages/DeviceManagement';
 import AttendanceLogs from './pages/AttendanceLogs';
 import IpWhitelist from './pages/IpWhitelist';
@@ -43,6 +44,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/qr" replace />} />
         <Route path="/qr" element={<QrScreen />} />
+        <Route path="/checkin" element={<CheckIn />} />
 
         <Route path="/admin/login" element={<Login />} />
         <Route path="/admin" element={<RequireAdmin />}>

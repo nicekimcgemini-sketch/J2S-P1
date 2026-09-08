@@ -3,7 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { qrApi } from '../services/api';
 
 const QR_REFRESH_INTERVAL = 55_000; // 55초마다 자동 갱신 (만료 5초 전)
-const APP_DOWNLOAD_URL = import.meta.env.VITE_APP_DOWNLOAD_URL as string | undefined;
+const CHECKIN_URL = `${window.location.origin}/checkin`;
 
 export default function QrScreen() {
   const [token, setToken] = useState<string | null>(null);
@@ -65,18 +65,11 @@ export default function QrScreen() {
         {loading ? '갱신 중...' : '새로고침'}
       </button>
 
-      <a
-        href={APP_DOWNLOAD_URL || undefined}
-        onClick={(e) => {
-          if (!APP_DOWNLOAD_URL) {
-            e.preventDefault();
-            alert('앱 다운로드는 아직 준비 중입니다.');
-          }
-        }}
-        style={{ ...styles.downloadButton, opacity: APP_DOWNLOAD_URL ? 1 : 0.6 }}
-      >
-        출퇴근 앱 다운로드
-      </a>
+      <div style={styles.checkinBox}>
+        <p style={styles.checkinLabel}>최초 1회, 본인 휴대폰 카메라로 스캔하세요</p>
+        <QRCodeSVG value={CHECKIN_URL} size={110} level="M" />
+        <p style={styles.checkinCaption}>모바일 체크인 페이지 열기</p>
+      </div>
     </div>
   );
 }
@@ -98,9 +91,11 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#1677ff', color: '#fff', border: 'none', borderRadius: 8,
     cursor: 'pointer',
   },
-  downloadButton: {
-    marginTop: 8, padding: '10px 28px', fontSize: 14, fontWeight: 600,
-    background: '#fff', color: '#1677ff', border: '1px solid #1677ff', borderRadius: 8,
-    cursor: 'pointer', textDecoration: 'none',
+  checkinBox: {
+    marginTop: 16, padding: 16, background: '#fff', borderRadius: 12,
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+    boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
   },
+  checkinLabel: { fontSize: 12, color: '#888', margin: 0 },
+  checkinCaption: { fontSize: 13, fontWeight: 600, color: '#333', margin: 0 },
 };

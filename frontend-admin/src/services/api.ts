@@ -58,11 +58,20 @@ export interface IpWhitelistEntry {
   createdAt: string;
 }
 
+export interface DeviceStatusResponse {
+  status: 'NOT_REGISTERED' | 'PENDING' | 'APPROVED' | 'REVOKED';
+  workerName: string | null;
+}
+
 export const deviceApi = {
   getAll: () => api.get<Device[]>('/admin/devices').then(r => r.data),
   getPending: () => api.get<Device[]>('/admin/devices/pending').then(r => r.data),
   updateStatus: (id: number, status: 'APPROVED' | 'REVOKED') =>
     api.patch<Device>(`/admin/devices/${id}/status`, null, { params: { status } }).then(r => r.data),
+  getStatus: (hardwareId: string) =>
+    api.get<DeviceStatusResponse>('/devices/status', { params: { hardwareId } }).then(r => r.data),
+  register: (hardwareId: string, employeeNo: string, deviceName: string, osType: string) =>
+    api.post('/devices/register', { hardwareId, employeeNo, deviceName, osType }).then(r => r.data),
 };
 
 export const attendanceApi = {
@@ -70,6 +79,10 @@ export const attendanceApi = {
     api.get<AttendanceLog[]>('/admin/attendance/logs', {
       params: { date, companyId },
     }).then(r => r.data),
+  checkIn: (hardwareId: string, qrToken: string) =>
+    api.post('/attendance/check-in', { hardwareId, qrToken }),
+  checkOut: (hardwareId: string, qrToken: string) =>
+    api.post('/attendance/check-out', { hardwareId, qrToken }),
 };
 
 export const ipWhitelistApi = {

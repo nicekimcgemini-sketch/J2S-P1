@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -41,6 +42,11 @@ public class DeviceService {
             log.info("신규 기기 등록 요청: hardwareId={}, worker={}", dto.getHardwareId(), worker.getEmployeeNo());
             return deviceRepository.save(device);
         });
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Device> findByHardwareId(String hardwareId) {
+        return deviceRepository.findByHardwareId(hardwareId);
     }
 
     @Transactional(readOnly = true)
