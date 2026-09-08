@@ -5,9 +5,19 @@ import { getOrCreateDeviceId } from '../services/deviceId';
 
 type Stage = 'loading' | 'not_registered' | 'registering' | 'pending' | 'revoked' | 'ready' | 'scanning';
 
+// 완벽한 차단은 불가능(개발자도구 모바일 모드는 UA/터치/포인터를 전부 그대로 흉내 냄).
+// 여러 신호를 같이 요구해서 일반 PC 브라우저 접속만 걸러내는 수준의 문턱.
+function isLikelyMobile(): boolean {
+  const uaMatch = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  const hasTouch = navigator.maxTouchPoints > 0;
+  const coarsePointer = window.matchMedia?.('(pointer: coarse)').matches ?? false;
+  return uaMatch && hasTouch && coarsePointer;
+}
+
 const deviceId = getOrCreateDeviceId();
 
 export default function CheckIn() {
+  const [isMobile] = useState(isLikelyMobile);
   const [stage, setStage] = useState<Stage>('loading');
   const [workerName, setWorkerName] = useState<string | null>(null);
   const [employeeNo, setEmployeeNo] = useState('');
@@ -29,7 +39,10 @@ export default function CheckIn() {
     else if (res.status === 'APPROVED') setStage('ready');
   }, []);
 
-  useEffect(() => { refreshStatus(); }, [refreshStatus]);
+  useEffect(() => {
+    if (!isMobile) return;
+    refreshStatus();
+  }, [isMobile, refreshStatus]);
 
   // 승인 대기 중이면 5초마다 자동 재확인
   useEffect(() => {
@@ -109,6 +122,15 @@ export default function CheckIn() {
   };
 
   useEffect(() => () => stopScan(), [stopScan]);
+
+  if (!isMobile) {
+    return (
+      <Centered>
+        <h2>모바일 기기에서만 접속할 수 있습니다</h2>
+        <p style={{ color: '#888' }}>본인 휴대폰으로 QR을 스캔해 접속해주세요.</p>
+      </Centered>
+    );
+  }
 
   if (stage === 'loading') {
     return <Centered>확인 중...</Centered>;
