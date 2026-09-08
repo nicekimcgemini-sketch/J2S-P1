@@ -1,5 +1,6 @@
 package com.j2s.attendance.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ public class Worker {
     @Column(nullable = false, unique = true)
     private String employeeNo;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "worker", cascade = CascadeType.ALL)
     private List<Device> devices = new ArrayList<>();
 
