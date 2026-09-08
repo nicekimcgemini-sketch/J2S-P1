@@ -5,6 +5,9 @@ steps:
       - build
       - '--build-arg'
       - 'VITE_API_URL=https://j2s-backend-401796347608.asia-northeast3.run.app/api'
+      # APK가 준비되면 아래 줄의 주석을 해제하고 실제 다운로드 URL을 넣으세요.
+      # - '--build-arg'
+      # - 'VITE_APP_DOWNLOAD_URL=https://.../attendance-app.apk'
       - '-t'
       - 'asia-northeast3-docker.pkg.dev/j2s-p1-attendance/cloud-run-source-deploy/j2s-frontend'
       - '.'

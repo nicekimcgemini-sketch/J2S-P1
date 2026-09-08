@@ -3,6 +3,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { qrApi } from '../services/api';
 
 const QR_REFRESH_INTERVAL = 55_000; // 55초마다 자동 갱신 (만료 5초 전)
+const APP_DOWNLOAD_URL = import.meta.env.VITE_APP_DOWNLOAD_URL as string | undefined;
 
 export default function QrScreen() {
   const [token, setToken] = useState<string | null>(null);
@@ -63,6 +64,19 @@ export default function QrScreen() {
       >
         {loading ? '갱신 중...' : '새로고침'}
       </button>
+
+      <a
+        href={APP_DOWNLOAD_URL || undefined}
+        onClick={(e) => {
+          if (!APP_DOWNLOAD_URL) {
+            e.preventDefault();
+            alert('앱 다운로드는 아직 준비 중입니다.');
+          }
+        }}
+        style={{ ...styles.downloadButton, opacity: APP_DOWNLOAD_URL ? 1 : 0.6 }}
+      >
+        출퇴근 앱 다운로드
+      </a>
     </div>
   );
 }
@@ -83,5 +97,10 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: 16, padding: '12px 32px', fontSize: 16, fontWeight: 600,
     background: '#1677ff', color: '#fff', border: 'none', borderRadius: 8,
     cursor: 'pointer',
+  },
+  downloadButton: {
+    marginTop: 8, padding: '10px 28px', fontSize: 14, fontWeight: 600,
+    background: '#fff', color: '#1677ff', border: '1px solid #1677ff', borderRadius: 8,
+    cursor: 'pointer', textDecoration: 'none',
   },
 };
