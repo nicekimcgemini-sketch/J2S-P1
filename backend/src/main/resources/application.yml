@@ -33,3 +33,4 @@ app:
 logging:
   level:
     com.j2s.attendance: DEBUG
+    org.springframework.security: DEBUG
