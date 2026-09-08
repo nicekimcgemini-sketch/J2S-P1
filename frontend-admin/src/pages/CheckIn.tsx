@@ -21,7 +21,11 @@ export default function CheckIn() {
   const [stage, setStage] = useState<Stage>('loading');
   const [workerName, setWorkerName] = useState<string | null>(null);
   const [employeeNo, setEmployeeNo] = useState('');
-  const [mode, setMode] = useState<'CHECK_IN' | 'CHECK_OUT'>('CHECK_IN');
+  const [mode, setModeState] = useState<'CHECK_IN' | 'CHECK_OUT'>('CHECK_IN');
+  const setMode = (m: 'CHECK_IN' | 'CHECK_OUT') => {
+    modeRef.current = m;
+    setModeState(m);
+  };
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -29,6 +33,9 @@ export default function CheckIn() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number>();
+  // startScan()의 tick 루프는 카메라를 열 때의 클로저에 고정되므로,
+  // mode를 직접 참조하면 이후 출근/퇴근 버튼을 바꿔도 처음 값으로 굳어버림 -> ref로 항상 최신값을 읽음
+  const modeRef = useRef<'CHECK_IN' | 'CHECK_OUT'>('CHECK_IN');
 
   const refreshStatus = useCallback(async () => {
     const res = await deviceApi.getStatus(deviceId);
@@ -108,10 +115,11 @@ export default function CheckIn() {
   }, [stopScan]);
 
   const handleScanned = async (token: string) => {
+    const activeMode = modeRef.current;
     try {
-      if (mode === 'CHECK_IN') await attendanceApi.checkIn(deviceId, token);
+      if (activeMode === 'CHECK_IN') await attendanceApi.checkIn(deviceId, token);
       else await attendanceApi.checkOut(deviceId, token);
-      setMessage(mode === 'CHECK_IN' ? '출근 처리되었습니다.' : '퇴근 처리되었습니다.');
+      setMessage(activeMode === 'CHECK_IN' ? '출근 처리되었습니다.' : '퇴근 처리되었습니다.');
       setError('');
     } catch (err: any) {
       setError(err?.response?.data?.message || 'QR 처리에 실패했습니다. 다시 시도해주세요.');

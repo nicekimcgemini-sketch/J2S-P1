@@ -6,7 +6,9 @@ COPY src ./src
 RUN mvn -B package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
+RUN apk add --no-cache tzdata
+ENV TZ=Asia/Seoul
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Duser.timezone=Asia/Seoul", "-jar", "app.jar"]
