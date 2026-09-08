@@ -52,7 +52,7 @@ export default function DeviceManagement() {
         <table style={styles.table}>
           <thead>
             <tr>
-              <th>작업자</th><th>사번</th><th>협력사</th>
+              <th>직원</th><th>사번</th>
               <th>기기명</th><th>OS</th><th>상태</th><th>등록일</th><th>작업</th>
             </tr>
           </thead>
@@ -61,7 +61,6 @@ export default function DeviceManagement() {
               <tr key={d.id}>
                 <td>{d.worker.name}</td>
                 <td>{d.worker.employeeNo}</td>
-                <td>{d.worker.company.name}</td>
                 <td>{d.deviceName}</td>
                 <td>{d.osType}</td>
                 <td>

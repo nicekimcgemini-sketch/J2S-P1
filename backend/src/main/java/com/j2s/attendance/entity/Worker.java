@@ -21,10 +21,6 @@ public class Worker {
     @Column(nullable = false, unique = true)
     private String employeeNo;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id", nullable = false)
-    private Company company;
-
     @OneToMany(mappedBy = "worker", cascade = CascadeType.ALL)
     private List<Device> devices = new ArrayList<>();
 

@@ -76,11 +76,10 @@ public class AdminController {
         return ResponseEntity.ok(deviceService.updateDeviceStatus(id, status));
     }
 
-    // 날짜별/협력사별 출퇴근 로그 조회
+    // 날짜별 출퇴근 로그 조회
     @GetMapping("/attendance/logs")
     public ResponseEntity<List<AttendanceLogDto>> getLogs(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam(required = false) Long companyId) {
-        return ResponseEntity.ok(attendanceService.getLogs(companyId, date));
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return ResponseEntity.ok(attendanceService.getLogs(date));
     }
 }

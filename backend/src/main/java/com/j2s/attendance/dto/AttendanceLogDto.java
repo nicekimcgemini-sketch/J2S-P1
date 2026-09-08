@@ -10,7 +10,6 @@ public class AttendanceLogDto {
     private Long id;
     private String workerName;
     private String employeeNo;
-    private String companyName;
     private AttendanceType type;
     private LocalDateTime checkedAt;
 
@@ -19,7 +18,6 @@ public class AttendanceLogDto {
         dto.id = log.getId();
         dto.workerName = log.getWorker().getName();
         dto.employeeNo = log.getWorker().getEmployeeNo();
-        dto.companyName = log.getWorker().getCompany().getName();
         dto.type = log.getType();
         dto.checkedAt = log.getCheckedAt();
         return dto;

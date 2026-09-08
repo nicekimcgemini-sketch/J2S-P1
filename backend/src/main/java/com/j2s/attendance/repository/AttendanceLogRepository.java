@@ -15,25 +15,10 @@ public interface AttendanceLogRepository extends JpaRepository<AttendanceLog, Lo
     @Query("""
         SELECT a FROM AttendanceLog a
         JOIN FETCH a.worker w
-        JOIN FETCH w.company c
         WHERE a.checkedAt BETWEEN :start AND :end
         ORDER BY a.checkedAt DESC
     """)
     List<AttendanceLog> findByDateRange(
-        @Param("start") LocalDateTime start,
-        @Param("end") LocalDateTime end
-    );
-
-    @Query("""
-        SELECT a FROM AttendanceLog a
-        JOIN FETCH a.worker w
-        JOIN FETCH w.company c
-        WHERE c.id = :companyId
-          AND a.checkedAt BETWEEN :start AND :end
-        ORDER BY a.checkedAt DESC
-    """)
-    List<AttendanceLog> findByCompanyAndDateRange(
-        @Param("companyId") Long companyId,
         @Param("start") LocalDateTime start,
         @Param("end") LocalDateTime end
     );

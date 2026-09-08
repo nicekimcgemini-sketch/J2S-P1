@@ -5,12 +5,11 @@ import { format } from 'date-fns';
 export default function AttendanceLogs() {
   const [logs, setLogs] = useState<AttendanceLog[]>([]);
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [companyId, setCompanyId] = useState('');
   const [loading, setLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    const data = await attendanceApi.getLogs(date, companyId ? Number(companyId) : undefined);
+    const data = await attendanceApi.getLogs(date);
     setLogs(data);
     setLoading(false);
   };
@@ -27,8 +26,6 @@ export default function AttendanceLogs() {
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'center' }}>
         <input type="date" value={date} onChange={e => setDate(e.target.value)}
           style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #d9d9d9' }} />
-        <input placeholder="협력사 ID (선택)" value={companyId} onChange={e => setCompanyId(e.target.value)}
-          style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #d9d9d9', width: 140 }} />
         <button onClick={load} style={{ padding: '6px 18px', background: '#1677ff', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
           조회
         </button>
@@ -42,7 +39,7 @@ export default function AttendanceLogs() {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
           <thead style={{ background: '#fafafa' }}>
             <tr>
-              <th style={th}>작업자</th><th style={th}>사번</th><th style={th}>협력사</th>
+              <th style={th}>직원</th><th style={th}>사번</th>
               <th style={th}>구분</th><th style={th}>시간</th>
             </tr>
           </thead>
@@ -51,7 +48,6 @@ export default function AttendanceLogs() {
               <tr key={l.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
                 <td style={td}>{l.workerName}</td>
                 <td style={td}>{l.employeeNo}</td>
-                <td style={td}>{l.companyName}</td>
                 <td style={td}>
                   <span style={{
                     color: l.type === 'CHECK_IN' ? '#1677ff' : '#ff4d4f',
@@ -64,7 +60,7 @@ export default function AttendanceLogs() {
               </tr>
             ))}
             {logs.length === 0 && (
-              <tr><td colSpan={5} style={{ textAlign: 'center', padding: 32, color: '#aaa' }}>기록 없음</td></tr>
+              <tr><td colSpan={4} style={{ textAlign: 'center', padding: 32, color: '#aaa' }}>기록 없음</td></tr>
             )}
           </tbody>
         </table>

@@ -79,14 +79,11 @@ public class AttendanceService {
     }
 
     @Transactional(readOnly = true)
-    public List<AttendanceLogDto> getLogs(Long companyId, LocalDate date) {
+    public List<AttendanceLogDto> getLogs(LocalDate date) {
         LocalDateTime start = date.atStartOfDay();
         LocalDateTime end = date.atTime(LocalTime.MAX);
 
-        List<AttendanceLog> logs = (companyId != null)
-                ? attendanceLogRepository.findByCompanyAndDateRange(companyId, start, end)
-                : attendanceLogRepository.findByDateRange(start, end);
-
+        List<AttendanceLog> logs = attendanceLogRepository.findByDateRange(start, end);
         return logs.stream().map(AttendanceLogDto::from).toList();
     }
 

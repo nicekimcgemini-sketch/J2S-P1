@@ -37,7 +37,7 @@ export interface Device {
   deviceName: string;
   osType: string;
   status: 'PENDING' | 'APPROVED' | 'REVOKED';
-  worker: { id: number; name: string; employeeNo: string; company: { name: string } };
+  worker: { id: number; name: string; employeeNo: string };
   registeredAt: string;
   approvedAt: string | null;
 }
@@ -46,7 +46,6 @@ export interface AttendanceLog {
   id: number;
   workerName: string;
   employeeNo: string;
-  companyName: string;
   type: 'CHECK_IN' | 'CHECK_OUT';
   checkedAt: string;
 }
@@ -75,9 +74,9 @@ export const deviceApi = {
 };
 
 export const attendanceApi = {
-  getLogs: (date: string, companyId?: number) =>
+  getLogs: (date: string) =>
     api.get<AttendanceLog[]>('/admin/attendance/logs', {
-      params: { date, companyId },
+      params: { date },
     }).then(r => r.data),
   checkIn: (hardwareId: string, qrToken: string) =>
     api.post('/attendance/check-in', { hardwareId, qrToken }),
