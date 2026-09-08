@@ -71,6 +71,7 @@ export const deviceApi = {
     api.get<DeviceStatusResponse>('/devices/status', { params: { hardwareId } }).then(r => r.data),
   register: (hardwareId: string, employeeNo: string, deviceName: string, osType: string) =>
     api.post('/devices/register', { hardwareId, employeeNo, deviceName, osType }).then(r => r.data),
+  remove: (id: number) => api.delete(`/admin/devices/${id}`),
 };
 
 export const attendanceApi = {

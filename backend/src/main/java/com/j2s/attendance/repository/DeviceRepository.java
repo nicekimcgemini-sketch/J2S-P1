@@ -18,4 +18,7 @@ public interface DeviceRepository extends JpaRepository<Device, Long> {
 
     @Query("SELECT d FROM Device d JOIN FETCH d.worker ORDER BY d.registeredAt DESC")
     List<Device> findAllWithWorker();
+
+    @Query("SELECT d FROM Device d JOIN FETCH d.worker WHERE d.id = :id")
+    Optional<Device> findByIdWithWorker(Long id);
 }

@@ -76,6 +76,13 @@ public class AdminController {
         return ResponseEntity.ok(deviceService.updateDeviceStatus(id, status));
     }
 
+    // 기기 삭제
+    @DeleteMapping("/devices/{id}")
+    public ResponseEntity<Void> deleteDevice(@PathVariable Long id) {
+        deviceService.deleteDevice(id);
+        return ResponseEntity.noContent().build();
+    }
+
     // 날짜별 출퇴근 로그 조회
     @GetMapping("/attendance/logs")
     public ResponseEntity<List<AttendanceLogDto>> getLogs(

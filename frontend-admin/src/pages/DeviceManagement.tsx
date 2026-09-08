@@ -19,6 +19,7 @@ export default function DeviceManagement() {
   const [filter, setFilter] = useState<'ALL' | 'PENDING'>('PENDING');
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [working, setWorking] = useState(false);
+  const [error, setError] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -32,9 +33,26 @@ export default function DeviceManagement() {
 
   const applyStatus = async (ids: number[], status: 'APPROVED' | 'REVOKED') => {
     setWorking(true);
+    setError('');
     try {
       await Promise.all(ids.map(id => deviceApi.updateStatus(id, status)));
       await load();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || '처리에 실패했습니다.');
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const applyDelete = async (ids: number[]) => {
+    if (!confirm(`${ids.length}건을 삭제할까요? 되돌릴 수 없습니다.`)) return;
+    setWorking(true);
+    setError('');
+    try {
+      await Promise.all(ids.map(id => deviceApi.remove(id)));
+      await load();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || '삭제에 실패했습니다.');
     } finally {
       setWorking(false);
     }
@@ -70,23 +88,20 @@ export default function DeviceManagement() {
         {selected.size > 0 && (
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
             <span style={{ fontSize: 13, color: '#555' }}>{selected.size}건 선택됨</span>
-            <button
-              disabled={working}
-              style={styles.btnApprove}
-              onClick={() => applyStatus([...selected], 'APPROVED')}
-            >
+            <button disabled={working} style={styles.btnApprove} onClick={() => applyStatus([...selected], 'APPROVED')}>
               일괄 승인
             </button>
-            <button
-              disabled={working}
-              style={styles.btnRevoke}
-              onClick={() => applyStatus([...selected], 'REVOKED')}
-            >
+            <button disabled={working} style={styles.btnRevoke} onClick={() => applyStatus([...selected], 'REVOKED')}>
               일괄 회수
+            </button>
+            <button disabled={working} style={styles.btnDelete} onClick={() => applyDelete([...selected])}>
+              일괄 삭제
             </button>
           </div>
         )}
       </div>
+
+      {error && <p style={{ color: '#ff4d4f', marginBottom: 12 }}>{error}</p>}
 
       {loading ? <p>로딩 중...</p> : (
         <div style={{ overflowX: 'auto' }}>
@@ -132,6 +147,7 @@ export default function DeviceManagement() {
                     {d.status !== 'REVOKED' && (
                       <button disabled={working} style={styles.btnRevoke} onClick={() => applyStatus([d.id], 'REVOKED')}>회수</button>
                     )}
+                    <button disabled={working} style={styles.btnDelete} onClick={() => applyDelete([d.id])}>삭제</button>
                   </td>
                 </tr>
               ))}
@@ -155,4 +171,5 @@ const styles: Record<string, React.CSSProperties> = {
   token: { fontFamily: 'monospace', fontSize: 12, color: '#555', whiteSpace: 'nowrap' },
   btnApprove: { padding: '4px 12px', background: '#52c41a', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' },
   btnRevoke: { padding: '4px 12px', background: '#ff4d4f', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' },
+  btnDelete: { padding: '4px 12px', background: '#595959', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' },
 };

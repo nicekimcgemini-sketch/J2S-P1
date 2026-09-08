@@ -8,6 +8,7 @@ import com.j2s.attendance.repository.DeviceRepository;
 import com.j2s.attendance.repository.WorkerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,7 +82,7 @@ public class DeviceService {
 
     @Transactional
     public Device updateDeviceStatus(Long deviceId, DeviceStatus newStatus) {
-        Device device = deviceRepository.findById(deviceId)
+        Device device = deviceRepository.findByIdWithWorker(deviceId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "기기를 찾을 수 없습니다."));
 
         device.setStatus(newStatus);
@@ -90,5 +91,19 @@ public class DeviceService {
 
         log.info("기기 상태 변경: id={}, status={}", deviceId, newStatus);
         return deviceRepository.save(device);
+    }
+
+    @Transactional
+    public void deleteDevice(Long deviceId) {
+        if (!deviceRepository.existsById(deviceId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "기기를 찾을 수 없습니다.");
+        }
+        try {
+            deviceRepository.deleteById(deviceId);
+            deviceRepository.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "출퇴근 기록이 있는 기기는 삭제할 수 없습니다. 권한 회수를 이용해주세요.");
+        }
+        log.info("기기 삭제: id={}", deviceId);
     }
 }
