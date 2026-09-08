@@ -46,8 +46,8 @@ export default function CheckIn() {
     try {
       await deviceApi.register(deviceId, employeeNo.trim(), navigator.userAgent, /iphone|ipad/i.test(navigator.userAgent) ? 'IOS' : 'ANDROID');
       await refreshStatus();
-    } catch {
-      setError('등록 실패. 사번을 확인해주세요.');
+    } catch (err: any) {
+      setError(err?.response?.data?.message || '등록 실패. 사번을 확인해주세요.');
       setStage('not_registered');
     }
   };

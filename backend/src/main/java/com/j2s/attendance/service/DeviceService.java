@@ -30,18 +30,31 @@ public class DeviceService {
         Worker worker = workerRepository.findByEmployeeNo(dto.getEmployeeNo())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "작업자를 찾을 수 없습니다."));
 
-        // 이미 등록된 기기인 경우 상태 반환 (재설치 시나리오)
-        return deviceRepository.findByHardwareId(dto.getHardwareId()).orElseGet(() -> {
-            Device device = Device.builder()
-                    .hardwareId(dto.getHardwareId())
-                    .deviceName(dto.getDeviceName())
-                    .osType(dto.getOsType())
-                    .worker(worker)
-                    .status(DeviceStatus.PENDING)
-                    .build();
-            log.info("신규 기기 등록 요청: hardwareId={}, worker={}", dto.getHardwareId(), worker.getEmployeeNo());
-            return deviceRepository.save(device);
-        });
+        // 이미 등록된 기기(같은 hardwareId)인 경우 상태 그대로 반환 (재설치/재조회 시나리오)
+        Optional<Device> existingByHardwareId = deviceRepository.findByHardwareId(dto.getHardwareId());
+        if (existingByHardwareId.isPresent()) {
+            return existingByHardwareId.get();
+        }
+
+        // 같은 사번으로 다른 기기가 이미 대기중이거나 승인된 경우 중복 신청 차단
+        boolean hasPending = !deviceRepository.findByWorkerIdAndStatus(worker.getId(), DeviceStatus.PENDING).isEmpty();
+        boolean hasApproved = !deviceRepository.findByWorkerIdAndStatus(worker.getId(), DeviceStatus.APPROVED).isEmpty();
+        if (hasPending) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 승인 대기 중인 기기가 있습니다.");
+        }
+        if (hasApproved) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 승인된 기기가 있습니다.");
+        }
+
+        Device device = Device.builder()
+                .hardwareId(dto.getHardwareId())
+                .deviceName(dto.getDeviceName())
+                .osType(dto.getOsType())
+                .worker(worker)
+                .status(DeviceStatus.PENDING)
+                .build();
+        log.info("신규 기기 등록 요청: hardwareId={}, worker={}", dto.getHardwareId(), worker.getEmployeeNo());
+        return deviceRepository.save(device);
     }
 
     @Transactional(readOnly = true)
@@ -63,7 +76,7 @@ public class DeviceService {
 
     @Transactional(readOnly = true)
     public List<Device> getAllDevices() {
-        return deviceRepository.findAll();
+        return deviceRepository.findAllWithWorker();
     }
 
     @Transactional
