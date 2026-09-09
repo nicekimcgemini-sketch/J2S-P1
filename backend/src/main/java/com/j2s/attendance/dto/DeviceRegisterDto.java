@@ -12,8 +12,8 @@ public class DeviceRegisterDto {
     private String hardwareId;
 
     @NotBlank
-    @Pattern(regexp = "^S\\d+$", message = "사번은 대문자 S로 시작해야 합니다.")
-    private String employeeNo;   // 작업자 사번 (예: S06098)
+    @Pattern(regexp = "^S\\d{5}$", message = "사번 형식이 올바르지 않습니다. 대문자 S와 숫자 5자리, 총 6자리로 입력해주세요. (예: S06098)")
+    private String employeeNo;   // 작업자 사번 (형식: S + 숫자 5자리, 예: S06098)
 
     private String deviceName;
 

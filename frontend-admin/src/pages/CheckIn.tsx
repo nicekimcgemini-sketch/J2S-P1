@@ -5,6 +5,9 @@ import { getOrCreateDeviceId } from '../services/deviceId';
 
 type Stage = 'loading' | 'not_registered' | 'registering' | 'pending' | 'revoked' | 'ready' | 'scanning';
 
+const EMPLOYEE_NO_PATTERN = /^S\d{5}$/;
+const EMPLOYEE_NO_HINT = '사번 형식이 올바르지 않습니다. 대문자 S와 숫자 5자리, 총 6자리로 입력해주세요. (예: S06098)';
+
 // 완벽한 차단은 불가능(개발자도구 모바일 모드는 UA/터치/포인터를 전부 그대로 흉내 냄).
 // 여러 신호를 같이 요구해서 일반 PC 브라우저 접속만 걸러내는 수준의 문턱.
 function isLikelyMobile(): boolean {
@@ -60,11 +63,16 @@ export default function CheckIn() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!employeeNo.trim()) return;
+    const trimmed = employeeNo.trim().toUpperCase();
+    if (!trimmed) return;
+    if (!EMPLOYEE_NO_PATTERN.test(trimmed)) {
+      setError(EMPLOYEE_NO_HINT);
+      return;
+    }
     setStage('registering');
     setError('');
     try {
-      await deviceApi.register(deviceId, employeeNo.trim(), navigator.userAgent, /iphone|ipad/i.test(navigator.userAgent) ? 'IOS' : 'ANDROID');
+      await deviceApi.register(deviceId, trimmed, navigator.userAgent, /iphone|ipad/i.test(navigator.userAgent) ? 'IOS' : 'ANDROID');
       await refreshStatus();
     } catch (err: any) {
       setError(err?.response?.data?.message || '등록 실패. 사번을 확인해주세요.');
@@ -153,9 +161,10 @@ export default function CheckIn() {
         </p>
         <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 260 }}>
           <input
-            placeholder="사번"
+            placeholder="사번 (예: S06098)"
             value={employeeNo}
-            onChange={e => setEmployeeNo(e.target.value)}
+            onChange={e => setEmployeeNo(e.target.value.toUpperCase())}
+            maxLength={6}
             style={inputStyle}
             autoFocus
           />
