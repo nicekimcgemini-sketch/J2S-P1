@@ -10,6 +10,7 @@ export default function QrScreen() {
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [remaining, setRemaining] = useState(60);
   const [loading, setLoading] = useState(false);
+  const [showSetup, setShowSetup] = useState(false);
 
   const fetchQr = useCallback(async () => {
     setLoading(true);
@@ -65,11 +66,18 @@ export default function QrScreen() {
         {loading ? '갱신 중...' : '새로고침'}
       </button>
 
-      <div style={styles.checkinBox}>
-        <p style={styles.checkinLabel}>최초 1회, 본인 휴대폰 카메라로 스캔하세요</p>
-        <QRCodeSVG value={CHECKIN_URL} size={110} level="M" />
-        <p style={styles.checkinCaption}>모바일 체크인 페이지 열기</p>
-      </div>
+      {showSetup ? (
+        <div style={styles.checkinBox}>
+          <p style={styles.checkinLabel}>최초 1회, 본인 휴대폰 카메라로 스캔하세요</p>
+          <QRCodeSVG value={CHECKIN_URL} size={110} level="M" />
+          <p style={styles.checkinCaption}>모바일 체크인 페이지 열기</p>
+          <button style={styles.setupToggle} onClick={() => setShowSetup(false)}>닫기</button>
+        </div>
+      ) : (
+        <button style={styles.setupToggle} onClick={() => setShowSetup(true)}>
+          최초 이용자이신가요? 등록 QR 보기
+        </button>
+      )}
     </div>
   );
 }
@@ -98,4 +106,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   checkinLabel: { fontSize: 12, color: '#888', margin: 0 },
   checkinCaption: { fontSize: 13, fontWeight: 600, color: '#333', margin: 0 },
+  setupToggle: {
+    marginTop: 4, padding: '6px 4px', fontSize: 12.5, color: '#888',
+    background: 'transparent', border: 'none', textDecoration: 'underline', cursor: 'pointer',
+  },
 };

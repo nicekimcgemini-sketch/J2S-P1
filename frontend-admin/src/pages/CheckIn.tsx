@@ -139,119 +139,115 @@ export default function CheckIn() {
 
   useEffect(() => () => stopScan(), [stopScan]);
 
+  const Brand = () => <div className="brand"><span className="dot" /> 출퇴근 체크인</div>;
+
   if (!isMobile) {
     return (
-      <Centered>
+      <Shell>
+        <Brand />
         <h2>모바일 기기에서만 접속할 수 있습니다</h2>
-        <p style={{ color: '#888' }}>본인 휴대폰으로 QR을 스캔해 접속해주세요.</p>
-      </Centered>
+        <p className="sub">본인 휴대폰으로 QR을 스캔해 접속해주세요.</p>
+      </Shell>
     );
   }
 
   if (stage === 'loading') {
-    return <Centered>확인 중...</Centered>;
+    return (
+      <Shell>
+        <Brand />
+        <p className="sub">확인 중...</p>
+      </Shell>
+    );
   }
 
   if (stage === 'not_registered' || stage === 'registering') {
     return (
-      <Centered>
-        <h2 style={{ marginBottom: 16 }}>기기 등록</h2>
-        <p style={{ color: '#888', marginBottom: 20, textAlign: 'center' }}>
-          최초 1회 사번을 입력하면 관리자 승인 후 사용할 수 있습니다.
-        </p>
-        <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 260 }}>
+      <Shell>
+        <Brand />
+        <h2>기기 등록</h2>
+        <p className="sub">최초 1회 사번을 입력하면 관리자 승인 후 사용할 수 있습니다.</p>
+        <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
           <input
+            className="field"
             placeholder="사번 (예: S06098)"
             value={employeeNo}
             onChange={e => setEmployeeNo(e.target.value.toUpperCase())}
             maxLength={6}
-            style={inputStyle}
             autoFocus
           />
-          {error && <p style={{ color: '#ff4d4f', fontSize: 13, margin: 0 }}>{error}</p>}
-          <button type="submit" disabled={stage === 'registering'} style={buttonStyle}>
+          {error && <p className="alert-banner">{error}</p>}
+          <button type="submit" className="btn btn-primary" disabled={stage === 'registering'}>
             {stage === 'registering' ? '등록 중...' : '등록 요청'}
           </button>
         </form>
-      </Centered>
+      </Shell>
     );
   }
 
   if (stage === 'pending') {
     return (
-      <Centered>
-        <h2>승인 대기 중</h2>
-        <p style={{ color: '#888' }}>관리자 승인 후 자동으로 사용할 수 있습니다.</p>
-      </Centered>
+      <Shell>
+        <Brand />
+        <span className="status-pill warn" style={{ fontSize: 13, padding: '5px 14px' }}>승인 대기 중</span>
+        <p className="sub">관리자 승인 후 자동으로 사용할 수 있습니다.</p>
+      </Shell>
     );
   }
 
   if (stage === 'revoked') {
     return (
-      <Centered>
-        <h2 style={{ color: '#ff4d4f' }}>사용 권한이 회수되었습니다</h2>
-        <p style={{ color: '#888' }}>관리자에게 문의해주세요.</p>
-      </Centered>
+      <Shell>
+        <Brand />
+        <span className="status-pill crit" style={{ fontSize: 13, padding: '5px 14px' }}>사용 권한 회수됨</span>
+        <p className="sub">관리자에게 문의해주세요.</p>
+      </Shell>
     );
   }
 
   // ready or scanning
   return (
-    <Centered>
-      {workerName && <p style={{ color: '#888', marginBottom: 4 }}>{workerName}님</p>}
+    <Shell>
+      <Brand />
+      {workerName && <h2>{workerName}님</h2>}
 
       {stage === 'ready' && (
         <>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+          <div className="mode-toggle">
             {(['CHECK_IN', 'CHECK_OUT'] as const).map(m => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
-                style={{ ...modeButtonStyle, background: mode === m ? '#1677ff' : '#fff', color: mode === m ? '#fff' : '#333' }}
+                className={mode === m ? 'active' : ''}
               >
                 {m === 'CHECK_IN' ? '출근' : '퇴근'}
               </button>
             ))}
           </div>
 
-          {message && <p style={{ color: '#52c41a', fontWeight: 600 }}>{message}</p>}
-          {error && <p style={{ color: '#ff4d4f' }}>{error}</p>}
+          {message && <span className="status-pill ok" style={{ fontSize: 13, padding: '5px 14px' }}>{message}</span>}
+          {error && <p className="alert-banner">{error}</p>}
 
-          <button onClick={startScan} style={buttonStyle}>
+          <button onClick={startScan} className="btn btn-primary">
             {mode === 'CHECK_IN' ? '출근 QR 스캔' : '퇴근 QR 스캔'}
           </button>
         </>
       )}
 
-      <video ref={videoRef} playsInline muted style={{ display: stage === 'scanning' ? 'block' : 'none', width: 280, borderRadius: 12, marginTop: 16 }} />
+      <video ref={videoRef} playsInline muted className="scan-video" style={{ display: stage === 'scanning' ? 'block' : 'none' }} />
       <canvas ref={canvasRef} style={{ display: 'none' }} />
       {stage === 'scanning' && (
-        <button onClick={() => { stopScan(); setStage('ready'); }} style={{ ...buttonStyle, marginTop: 12, background: '#888' }}>
+        <button onClick={() => { stopScan(); setStage('ready'); }} className="btn btn-ghost" style={{ width: '100%' }}>
           취소
         </button>
       )}
-    </Centered>
+    </Shell>
   );
 }
 
-function Centered({ children }: { children: React.ReactNode }) {
+function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      minHeight: '100vh', background: '#f0f2f5', padding: 24, textAlign: 'center',
-    }}>
-      {children}
+    <div className="admin-root mobile-shell">
+      <div className="mobile-card">{children}</div>
     </div>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  padding: '10px 12px', borderRadius: 6, border: '1px solid #d9d9d9', fontSize: 16,
-};
-const buttonStyle: React.CSSProperties = {
-  padding: '12px 32px', fontSize: 16, fontWeight: 600,
-  background: '#1677ff', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer',
-};
-const modeButtonStyle: React.CSSProperties = {
-  padding: '8px 24px', fontSize: 14, fontWeight: 600, border: '1px solid #d9d9d9', borderRadius: 8, cursor: 'pointer',
-};
