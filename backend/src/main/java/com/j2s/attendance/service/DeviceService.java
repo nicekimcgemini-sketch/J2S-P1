@@ -28,8 +28,17 @@ public class DeviceService {
 
     @Transactional
     public Device registerDevice(DeviceRegisterDto dto) {
+        // 최초 등록자 프로세스: 사번이 아직 없으면 이름과 함께 새 작업자를 만든다.
+        // 이미 존재하는 사번이면 기존 작업자에 기기만 새로 연결한다.
         Worker worker = workerRepository.findByEmployeeNo(dto.getEmployeeNo())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "작업자를 찾을 수 없습니다."));
+                .orElseGet(() -> {
+                    Worker created = Worker.builder()
+                            .employeeNo(dto.getEmployeeNo())
+                            .name(dto.getName())
+                            .build();
+                    log.info("신규 작업자 등록: employeeNo={}, name={}", dto.getEmployeeNo(), dto.getName());
+                    return workerRepository.save(created);
+                });
 
         // 이미 등록된 기기(같은 hardwareId)인 경우 상태 그대로 반환 (재설치/재조회 시나리오)
         Optional<Device> existingByHardwareId = deviceRepository.findByHardwareId(dto.getHardwareId());

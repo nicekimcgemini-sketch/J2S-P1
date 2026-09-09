@@ -15,6 +15,9 @@ public class DeviceRegisterDto {
     @Pattern(regexp = "^S\\d{5}$", message = "사번 형식이 올바르지 않습니다. 대문자 S와 숫자 5자리, 총 6자리로 입력해주세요. (예: S06098)")
     private String employeeNo;   // 작업자 사번 (형식: S + 숫자 5자리, 예: S06098)
 
+    @NotBlank
+    private String name;   // 최초 등록 시 사용할 이름 (기존 작업자면 무시됨)
+
     private String deviceName;
 
     @NotBlank

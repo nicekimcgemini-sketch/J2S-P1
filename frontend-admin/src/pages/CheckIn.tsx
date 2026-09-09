@@ -24,6 +24,7 @@ export default function CheckIn() {
   const [stage, setStage] = useState<Stage>('loading');
   const [workerName, setWorkerName] = useState<string | null>(null);
   const [employeeNo, setEmployeeNo] = useState('');
+  const [name, setName] = useState('');
   const [mode, setModeState] = useState<'CHECK_IN' | 'CHECK_OUT'>('CHECK_IN');
   const setMode = (m: 'CHECK_IN' | 'CHECK_OUT') => {
     modeRef.current = m;
@@ -64,7 +65,8 @@ export default function CheckIn() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = employeeNo.trim().toUpperCase();
-    if (!trimmed) return;
+    const trimmedName = name.trim();
+    if (!trimmed || !trimmedName) return;
     if (!EMPLOYEE_NO_PATTERN.test(trimmed)) {
       setError(EMPLOYEE_NO_HINT);
       return;
@@ -72,10 +74,10 @@ export default function CheckIn() {
     setStage('registering');
     setError('');
     try {
-      await deviceApi.register(deviceId, trimmed, navigator.userAgent, /iphone|ipad/i.test(navigator.userAgent) ? 'IOS' : 'ANDROID');
+      await deviceApi.register(deviceId, trimmed, trimmedName, navigator.userAgent, /iphone|ipad/i.test(navigator.userAgent) ? 'IOS' : 'ANDROID');
       await refreshStatus();
     } catch (err: any) {
-      setError(err?.response?.data?.message || '등록 실패. 사번을 확인해주세요.');
+      setError(err?.response?.data?.message || '등록 실패. 입력값을 확인해주세요.');
       setStage('not_registered');
     }
   };
@@ -165,15 +167,21 @@ export default function CheckIn() {
       <Shell>
         <Brand />
         <h2>기기 등록</h2>
-        <p className="sub">최초 1회 사번을 입력하면 관리자 승인 후 사용할 수 있습니다.</p>
+        <p className="sub">최초 1회 이름과 사번을 입력하면 관리자 승인 후 사용할 수 있습니다.</p>
         <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
+          <input
+            className="field"
+            placeholder="이름"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            autoFocus
+          />
           <input
             className="field"
             placeholder="사번 (예: S06098)"
             value={employeeNo}
             onChange={e => setEmployeeNo(e.target.value.toUpperCase())}
             maxLength={6}
-            autoFocus
           />
           {error && <p className="alert-banner">{error}</p>}
           <button type="submit" className="btn btn-primary" disabled={stage === 'registering'}>
