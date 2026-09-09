@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Link, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import QrScreen from './pages/QrScreen';
 import CheckIn from './pages/CheckIn';
 import DeviceManagement from './pages/DeviceManagement';
@@ -14,6 +15,15 @@ function RequireAdmin() {
   return <AdminLayout />;
 }
 
+function Clock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return <span className="clock">{now.toLocaleString('ko-KR', { hour12: false })}</span>;
+}
+
 function AdminLayout() {
   const navigate = useNavigate();
 
@@ -22,18 +32,27 @@ function AdminLayout() {
     navigate('/admin/login', { replace: true });
   };
 
+  const navClass = ({ isActive }: { isActive: boolean }) => 'nav-link' + (isActive ? ' active' : '');
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      <nav style={navStyle}>
-        <h2 style={{ color: '#fff', marginBottom: 24, fontSize: 16 }}>관리자</h2>
-        <Link style={linkStyle} to="/admin/devices">기기 관리</Link>
-        <Link style={linkStyle} to="/admin/ip-whitelist">허용 IP 관리</Link>
-        <Link style={linkStyle} to="/admin/logs">출퇴근 통계</Link>
-        <button onClick={handleLogout} style={logoutStyle}>로그아웃</button>
+    <div className="admin-root app-shell">
+      <nav className="app-sidebar">
+        <div className="brand"><span className="dot" /> 출퇴근 모니터링</div>
+        <span className="nav-section-label">모니터링</span>
+        <NavLink className={navClass} to="/admin/devices">기기 관리</NavLink>
+        <NavLink className={navClass} to="/admin/logs">출퇴근 통계</NavLink>
+        <span className="nav-section-label">설정</span>
+        <NavLink className={navClass} to="/admin/ip-whitelist">허용 IP 관리</NavLink>
+        <div className="nav-spacer" />
+        <button onClick={handleLogout} className="nav-link logout">로그아웃</button>
       </nav>
-      <main style={{ flex: 1, background: '#f5f5f5' }}>
+      <div className="app-main">
+        <div className="app-topbar">
+          <span>J2S-P1 · Attendance Ops Console</span>
+          <Clock />
+        </div>
         <Outlet />
-      </main>
+      </div>
     </div>
   );
 }
@@ -57,17 +76,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-
-const navStyle: React.CSSProperties = {
-  width: 200, background: '#001529', padding: '24px 16px',
-  display: 'flex', flexDirection: 'column', gap: 8,
-};
-const linkStyle: React.CSSProperties = {
-  color: 'rgba(255,255,255,0.7)', textDecoration: 'none',
-  padding: '10px 12px', borderRadius: 6, fontSize: 14,
-};
-const logoutStyle: React.CSSProperties = {
-  marginTop: 'auto', color: 'rgba(255,255,255,0.7)', background: 'transparent',
-  border: '1px solid rgba(255,255,255,0.3)', borderRadius: 6, padding: '10px 12px',
-  fontSize: 14, cursor: 'pointer',
-};

@@ -23,48 +23,29 @@ export default function Login() {
   };
 
   return (
-    <div style={styles.container}>
-      <form style={styles.card} onSubmit={handleSubmit}>
-        <h2 style={{ marginBottom: 24 }}>관리자 로그인</h2>
+    <div className="admin-root login-shell">
+      <form className="login-card" onSubmit={handleSubmit}>
+        <div className="brand"><span className="dot" /> 출퇴근 모니터링</div>
+        <h2>관리자 로그인</h2>
         <input
-          style={styles.input}
+          className="field"
           placeholder="아이디"
           value={username}
           onChange={e => setUsername(e.target.value)}
           autoFocus
         />
         <input
-          style={styles.input}
+          className="field"
           type="password"
           placeholder="비밀번호"
           value={password}
           onChange={e => setPassword(e.target.value)}
         />
-        {error && <p style={styles.error}>{error}</p>}
-        <button style={styles.button} disabled={loading}>
+        {error && <p className="alert-banner">{error}</p>}
+        <button className="btn btn-primary" style={{ marginTop: 8, padding: '10px 0', fontSize: 14 }} disabled={loading}>
           {loading ? '확인 중...' : '로그인'}
         </button>
       </form>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    minHeight: '100vh', background: '#f0f2f5',
-  },
-  card: {
-    display: 'flex', flexDirection: 'column', gap: 12,
-    background: '#fff', padding: 32, borderRadius: 12,
-    boxShadow: '0 4px 20px rgba(0,0,0,0.08)', width: 320,
-  },
-  input: {
-    padding: '10px 12px', borderRadius: 6, border: '1px solid #d9d9d9', fontSize: 14,
-  },
-  button: {
-    marginTop: 8, padding: '10px 0', fontSize: 15, fontWeight: 600,
-    background: '#1677ff', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer',
-  },
-  error: { color: '#ff4d4f', fontSize: 13, margin: 0 },
-};
