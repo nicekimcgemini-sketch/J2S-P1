@@ -2,6 +2,7 @@ package com.j2s.attendance.controller;
 
 import com.j2s.attendance.dto.DeviceRegisterDto;
 import com.j2s.attendance.entity.Device;
+import com.j2s.attendance.service.AttendanceService;
 import com.j2s.attendance.service.DeviceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class DeviceController {
 
     private final DeviceService deviceService;
+    private final AttendanceService attendanceService;
 
     @PostMapping("/register")
     public ResponseEntity<Device> register(@Valid @RequestBody DeviceRegisterDto dto) {
@@ -25,13 +27,16 @@ public class DeviceController {
         return ResponseEntity.status(HttpStatus.CREATED).body(device);
     }
 
-    // 기기 상태 조회 (등록 여부/승인 여부 확인용, 인증 불필요)
+    // 기기 상태 조회 (등록 여부/승인 여부/오늘 출근 여부 확인용, 인증 불필요)
     @GetMapping("/status")
     public ResponseEntity<DeviceStatusResponse> getStatus(@RequestParam String hardwareId) {
         return deviceService.findByHardwareId(hardwareId)
-                .map(d -> ResponseEntity.ok(new DeviceStatusResponse(d.getStatus().name(), d.getWorker().getName())))
-                .orElseGet(() -> ResponseEntity.ok(new DeviceStatusResponse("NOT_REGISTERED", null)));
+                .map(d -> ResponseEntity.ok(new DeviceStatusResponse(
+                        d.getStatus().name(),
+                        d.getWorker().getName(),
+                        attendanceService.hasCheckedInToday(d.getWorker().getId()))))
+                .orElseGet(() -> ResponseEntity.ok(new DeviceStatusResponse("NOT_REGISTERED", null, false)));
     }
 
-    public record DeviceStatusResponse(String status, String workerName) {}
+    public record DeviceStatusResponse(String status, String workerName, boolean checkedInToday) {}
 }

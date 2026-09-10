@@ -208,12 +208,4 @@
 .mobile-card .btn-ghost { border-color: rgba(255,255,255,0.2); color: rgba(232,237,245,0.7); }
 .mobile-card .btn-ghost:hover:not(:disabled) { color: #fff; border-color: rgba(255,255,255,0.4); }
 
-.mode-toggle { display: flex; gap: 8px; width: 100%; }
-.mode-toggle button {
-  flex: 1; padding: 10px 0; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15);
-  background: transparent; color: rgba(232,237,245,0.7); font-weight: 600; font-size: 13.5px;
-  cursor: pointer; font-family: inherit;
-}
-.mode-toggle button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-
 .scan-video { width: 100%; max-width: 280px; border-radius: 12px; }

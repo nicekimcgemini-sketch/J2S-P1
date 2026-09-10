@@ -23,13 +23,9 @@ export default function CheckIn() {
   const [isMobile] = useState(isLikelyMobile);
   const [stage, setStage] = useState<Stage>('loading');
   const [workerName, setWorkerName] = useState<string | null>(null);
+  const [checkedInToday, setCheckedInToday] = useState(false);
   const [employeeNo, setEmployeeNo] = useState('');
   const [name, setName] = useState('');
-  const [mode, setModeState] = useState<'CHECK_IN' | 'CHECK_OUT'>('CHECK_IN');
-  const setMode = (m: 'CHECK_IN' | 'CHECK_OUT') => {
-    modeRef.current = m;
-    setModeState(m);
-  };
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -38,12 +34,13 @@ export default function CheckIn() {
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number>();
   // startScan()의 tick 루프는 카메라를 열 때의 클로저에 고정되므로,
-  // mode를 직접 참조하면 이후 출근/퇴근 버튼을 바꿔도 처음 값으로 굳어버림 -> ref로 항상 최신값을 읽음
+  // 어떤 버튼으로 스캔을 시작했는지 ref로 따로 들고 있어야 나중에 값이 안 굳는다
   const modeRef = useRef<'CHECK_IN' | 'CHECK_OUT'>('CHECK_IN');
 
   const refreshStatus = useCallback(async () => {
     const res = await deviceApi.getStatus(deviceId);
     setWorkerName(res.workerName);
+    setCheckedInToday(res.checkedInToday);
     if (res.status === 'NOT_REGISTERED') setStage('not_registered');
     else if (res.status === 'PENDING') setStage('pending');
     else if (res.status === 'REVOKED') setStage('revoked');
@@ -88,7 +85,8 @@ export default function CheckIn() {
     streamRef.current = null;
   }, []);
 
-  const startScan = useCallback(async () => {
+  const startScan = useCallback(async (mode: 'CHECK_IN' | 'CHECK_OUT') => {
+    modeRef.current = mode;
     setError('');
     setMessage('');
     setStage('scanning');
@@ -127,8 +125,12 @@ export default function CheckIn() {
   const handleScanned = async (token: string) => {
     const activeMode = modeRef.current;
     try {
-      if (activeMode === 'CHECK_IN') await attendanceApi.checkIn(deviceId, token);
-      else await attendanceApi.checkOut(deviceId, token);
+      if (activeMode === 'CHECK_IN') {
+        await attendanceApi.checkIn(deviceId, token);
+        setCheckedInToday(true);
+      } else {
+        await attendanceApi.checkOut(deviceId, token);
+      }
       setMessage(activeMode === 'CHECK_IN' ? '출근 처리되었습니다.' : '퇴근 처리되었습니다.');
       setError('');
     } catch (err: any) {
@@ -220,24 +222,24 @@ export default function CheckIn() {
 
       {stage === 'ready' && (
         <>
-          <div className="mode-toggle">
-            {(['CHECK_IN', 'CHECK_OUT'] as const).map(m => (
-              <button
-                key={m}
-                onClick={() => setMode(m)}
-                className={mode === m ? 'active' : ''}
-              >
-                {m === 'CHECK_IN' ? '출근' : '퇴근'}
-              </button>
-            ))}
-          </div>
-
           {message && <span className="status-pill ok" style={{ fontSize: 13, padding: '5px 14px' }}>{message}</span>}
           {error && <p className="alert-banner">{error}</p>}
+          {checkedInToday && !message && (
+            <p className="sub">오늘 출근 처리가 이미 완료되었습니다.</p>
+          )}
 
-          <button onClick={startScan} className="btn btn-primary">
-            {mode === 'CHECK_IN' ? '출근 QR 스캔' : '퇴근 QR 스캔'}
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
+            <button
+              onClick={() => startScan('CHECK_IN')}
+              className="btn btn-ok"
+              disabled={checkedInToday}
+            >
+              출근 QR 스캔
+            </button>
+            <button onClick={() => startScan('CHECK_OUT')} className="btn btn-crit">
+              퇴근 QR 스캔
+            </button>
+          </div>
         </>
       )}
 

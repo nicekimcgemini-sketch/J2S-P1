@@ -60,6 +60,7 @@ export interface IpWhitelistEntry {
 export interface DeviceStatusResponse {
   status: 'NOT_REGISTERED' | 'PENDING' | 'APPROVED' | 'REVOKED';
   workerName: string | null;
+  checkedInToday: boolean;
 }
 
 export const deviceApi = {

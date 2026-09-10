@@ -36,12 +36,9 @@ public class AttendanceService {
         }
 
         Worker worker = device.getWorker();
-        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
-        LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
 
         // 오늘 이미 출근한 경우 중복 방지
-        if (attendanceLogRepository.existsByWorkerIdAndTypeAndCheckedAtBetween(
-                worker.getId(), AttendanceType.CHECK_IN, todayStart, todayEnd)) {
+        if (hasCheckedInToday(worker.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 오늘 출근 처리가 완료되었습니다.");
         }
 
@@ -85,6 +82,14 @@ public class AttendanceService {
 
         List<AttendanceLog> logs = attendanceLogRepository.findByDateRange(start, end);
         return logs.stream().map(AttendanceLogDto::from).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean hasCheckedInToday(Long workerId) {
+        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+        LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
+        return attendanceLogRepository.existsByWorkerIdAndTypeAndCheckedAtBetween(
+                workerId, AttendanceType.CHECK_IN, todayStart, todayEnd);
     }
 
     private Device validateDevice(String hardwareId) {
