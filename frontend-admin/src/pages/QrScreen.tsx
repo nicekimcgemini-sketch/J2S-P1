@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Activity, RefreshCw, Smartphone } from 'lucide-react';
+import { Activity, CircleCheck, ExternalLink, RefreshCw, Smartphone } from 'lucide-react';
 import { qrApi } from '../services/api';
 
 const QR_REFRESH_INTERVAL = 55_000; // 55초마다 자동 갱신 (만료 5초 전)
@@ -89,10 +89,29 @@ export default function QrScreen() {
         </button>
       </div>
 
-      <p className="flex items-center gap-1.5 text-xs text-slate-500">
-        <Smartphone className="h-3.5 w-3.5" />
-        스마트폰 카메라로 QR을 찍으면 접속됩니다. (최초 이용 시 자동으로 등록 화면으로 연결)
-      </p>
+      <div className="flex w-full max-w-sm flex-col gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-5 backdrop-blur">
+        <span className="text-xs font-bold uppercase tracking-wide text-slate-300">이용 방법</span>
+
+        <ol className="flex flex-col gap-3 text-[13px] leading-relaxed text-slate-400">
+          <li className="flex items-start gap-2.5">
+            <Smartphone className="mt-0.5 h-4 w-4 flex-none text-brand-400" />
+            스마트폰 <strong className="font-semibold text-slate-200">카메라 앱</strong>으로 위 QR을 비추세요
+          </li>
+          <li className="flex items-start gap-2.5">
+            <ExternalLink className="mt-0.5 h-4 w-4 flex-none text-brand-400" />
+            화면에 뜨는 링크를 눌러 <strong className="font-semibold text-slate-200">인터넷 브라우저</strong>로 여세요
+          </li>
+          <li className="flex items-start gap-2.5">
+            <CircleCheck className="mt-0.5 h-4 w-4 flex-none text-brand-400" />
+            처음이면 이름·사번을 입력하고 승인을 기다리세요. 이미 승인됐다면{' '}
+            <strong className="font-semibold text-slate-200">출근/퇴근 버튼</strong>만 누르면 바로 처리됩니다
+          </li>
+        </ol>
+
+        <p className="border-t border-white/5 pt-3 text-[11.5px] text-slate-500">
+          QR은 60초마다 새로 바뀝니다. 항상 화면에 떠 있는 QR을 다시 찍어주세요.
+        </p>
+      </div>
     </div>
   );
 }
