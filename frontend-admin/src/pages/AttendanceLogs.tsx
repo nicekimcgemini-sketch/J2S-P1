@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { attendanceApi, AttendanceLog } from '../services/api';
 import { format } from 'date-fns';
+import { Search } from 'lucide-react';
+import { attendanceApi, AttendanceLog } from '../services/api';
+import { Button, LoadingRow, Panel, PageHeader, StatRow, StatTile, StatusPill, inputClass } from '../components/dashboard';
 
 export default function AttendanceLogs() {
   const [logs, setLogs] = useState<AttendanceLog[]>([]);
@@ -20,65 +22,61 @@ export default function AttendanceLogs() {
   const checkOuts = logs.filter(l => l.type === 'CHECK_OUT').length;
 
   return (
-    <div className="page-body">
-      <h1 className="page-title">출퇴근 통계</h1>
-      <p className="page-sub">한국시간(KST) 기준 기록입니다.</p>
+    <div className="flex flex-1 flex-col gap-5 p-7">
+      <PageHeader title="출퇴근 통계" sub="한국시간(KST) 기준 기록입니다." />
 
-      <div className="stat-row">
-        <div className="stat-tile">
-          <span className="stat-label">전체 기록</span>
-          <span className="stat-value">{logs.length}</span>
-        </div>
-        <div className="stat-tile ok">
-          <span className="stat-label">출근</span>
-          <span className="stat-value">{checkIns}</span>
-        </div>
-        <div className="stat-tile crit">
-          <span className="stat-label">퇴근</span>
-          <span className="stat-value">{checkOuts}</span>
-        </div>
-      </div>
+      <StatRow>
+        <StatTile label="전체 기록" value={logs.length} />
+        <StatTile label="출근" value={checkIns} tone="ok" />
+        <StatTile label="퇴근" value={checkOuts} tone="crit" />
+      </StatRow>
 
-      <div className="panel">
-        <div className="panel-header">
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)} className="field" />
-            <button onClick={load} className="btn btn-primary">조회</button>
+      <Panel
+        actions={
+          <div className="flex items-center gap-2">
+            <input type="date" value={date} onChange={e => setDate(e.target.value)} className={inputClass} />
+            <Button onClick={load}><Search className="h-3.5 w-3.5" /> 조회</Button>
           </div>
-        </div>
-
+        }
+      >
         {loading ? (
-          <p style={{ padding: 24, color: 'var(--text-muted)' }}>로딩 중...</p>
+          <LoadingRow />
         ) : (
-          <div className="table-scroll">
-            <table className="data-table">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-[13px]">
               <thead>
-                <tr>
-                  <th>직원</th><th>사번</th>
-                  <th>구분</th><th>시간</th>
+                <tr className="border-b border-white/5 bg-white/[0.02] text-left text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                  <th className="whitespace-nowrap px-3.5 py-2.5">직원</th>
+                  <th className="whitespace-nowrap px-3.5 py-2.5">사번</th>
+                  <th className="whitespace-nowrap px-3.5 py-2.5">구분</th>
+                  <th className="whitespace-nowrap px-3.5 py-2.5">시간</th>
                 </tr>
               </thead>
               <tbody>
                 {logs.map(l => (
-                  <tr key={l.id}>
-                    <td>{l.workerName}</td>
-                    <td className="mono-strong">{l.employeeNo}</td>
-                    <td>
-                      <span className={'status-pill ' + (l.type === 'CHECK_IN' ? 'ok' : 'crit')}>
+                  <tr key={l.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.03]">
+                    <td className="px-3.5 py-2.5 font-medium text-slate-200">{l.workerName}</td>
+                    <td className="px-3.5 py-2.5 font-mono text-[12.5px] text-slate-300">{l.employeeNo}</td>
+                    <td className="px-3.5 py-2.5">
+                      <StatusPill tone={l.type === 'CHECK_IN' ? 'ok' : 'crit'}>
                         {l.type === 'CHECK_IN' ? '출근' : '퇴근'}
-                      </span>
+                      </StatusPill>
                     </td>
-                    <td className="mono">{new Date(l.checkedAt).toLocaleTimeString('ko-KR', { hour12: false })}</td>
+                    <td className="whitespace-nowrap px-3.5 py-2.5 font-mono text-xs text-slate-500">
+                      {new Date(l.checkedAt).toLocaleTimeString('ko-KR', { hour12: false })}
+                    </td>
                   </tr>
                 ))}
                 {logs.length === 0 && (
-                  <tr><td colSpan={4} className="empty-row">기록 없음</td></tr>
+                  <tr>
+                    <td colSpan={4} className="px-6 py-10 text-center text-sm text-slate-500">기록 없음</td>
+                  </tr>
                 )}
               </tbody>
             </table>
           </div>
         )}
-      </div>
+      </Panel>
     </div>
   );
 }

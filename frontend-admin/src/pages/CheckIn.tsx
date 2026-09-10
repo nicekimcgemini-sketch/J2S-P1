@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import jsQR from 'jsqr';
+import { LogIn, LogOut, X } from 'lucide-react';
 import { deviceApi, attendanceApi } from '../services/api';
 import { getOrCreateDeviceId } from '../services/deviceId';
+import { AlertBanner, Button, StatusPill, inputClassLg } from '../components/dashboard';
 
 type Stage = 'loading' | 'not_registered' | 'registering' | 'pending' | 'revoked' | 'ready' | 'scanning';
 
@@ -143,14 +145,22 @@ export default function CheckIn() {
 
   useEffect(() => () => stopScan(), [stopScan]);
 
-  const Brand = () => <div className="brand"><span className="dot" /> 출퇴근 체크인</div>;
+  const Brand = () => (
+    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+      <span className="relative flex h-1.5 w-1.5">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+      </span>
+      출퇴근 체크인
+    </div>
+  );
 
   if (!isMobile) {
     return (
       <Shell>
         <Brand />
-        <h2>모바일 기기에서만 접속할 수 있습니다</h2>
-        <p className="sub">본인 휴대폰으로 QR을 스캔해 접속해주세요.</p>
+        <h2 className="text-lg font-semibold text-white">모바일 기기에서만 접속할 수 있습니다</h2>
+        <p className="text-[13px] leading-relaxed text-slate-400">본인 휴대폰으로 QR을 스캔해 접속해주세요.</p>
       </Shell>
     );
   }
@@ -159,7 +169,7 @@ export default function CheckIn() {
     return (
       <Shell>
         <Brand />
-        <p className="sub">확인 중...</p>
+        <p className="text-[13px] text-slate-400">확인 중...</p>
       </Shell>
     );
   }
@@ -168,27 +178,27 @@ export default function CheckIn() {
     return (
       <Shell>
         <Brand />
-        <h2>기기 등록</h2>
-        <p className="sub">최초 1회 이름과 사번을 입력하면 관리자 승인 후 사용할 수 있습니다.</p>
-        <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
+        <h2 className="text-lg font-semibold text-white">기기 등록</h2>
+        <p className="text-[13px] leading-relaxed text-slate-400">최초 1회 이름과 사번을 입력하면 관리자 승인 후 사용할 수 있습니다.</p>
+        <form onSubmit={handleRegister} className="flex w-full flex-col gap-3">
           <input
-            className="field"
+            className={`${inputClassLg} w-full`}
             placeholder="이름"
             value={name}
             onChange={e => setName(e.target.value)}
             autoFocus
           />
           <input
-            className="field"
+            className={`${inputClassLg} w-full`}
             placeholder="사번 (예: S06098)"
             value={employeeNo}
             onChange={e => setEmployeeNo(e.target.value.toUpperCase())}
             maxLength={6}
           />
-          {error && <p className="alert-banner">{error}</p>}
-          <button type="submit" className="btn btn-primary" disabled={stage === 'registering'}>
+          {error && <AlertBanner>{error}</AlertBanner>}
+          <Button type="submit" size="lg" disabled={stage === 'registering'} className="w-full">
             {stage === 'registering' ? '등록 중...' : '등록 요청'}
-          </button>
+          </Button>
         </form>
       </Shell>
     );
@@ -198,8 +208,8 @@ export default function CheckIn() {
     return (
       <Shell>
         <Brand />
-        <span className="status-pill warn" style={{ fontSize: 13, padding: '5px 14px' }}>승인 대기 중</span>
-        <p className="sub">관리자 승인 후 자동으로 사용할 수 있습니다.</p>
+        <StatusPill tone="warn">승인 대기 중</StatusPill>
+        <p className="text-[13px] leading-relaxed text-slate-400">관리자 승인 후 자동으로 사용할 수 있습니다.</p>
       </Shell>
     );
   }
@@ -208,8 +218,8 @@ export default function CheckIn() {
     return (
       <Shell>
         <Brand />
-        <span className="status-pill crit" style={{ fontSize: 13, padding: '5px 14px' }}>사용 권한 회수됨</span>
-        <p className="sub">관리자에게 문의해주세요.</p>
+        <StatusPill tone="crit">사용 권한 회수됨</StatusPill>
+        <p className="text-[13px] leading-relaxed text-slate-400">관리자에게 문의해주세요.</p>
       </Shell>
     );
   }
@@ -218,37 +228,44 @@ export default function CheckIn() {
   return (
     <Shell>
       <Brand />
-      {workerName && <h2>{workerName}님</h2>}
+      {workerName && <h2 className="text-lg font-semibold text-white">{workerName}님</h2>}
 
       {stage === 'ready' && (
         <>
-          {message && <span className="status-pill ok" style={{ fontSize: 13, padding: '5px 14px' }}>{message}</span>}
-          {error && <p className="alert-banner">{error}</p>}
+          {message && <StatusPill tone="ok">{message}</StatusPill>}
+          {error && <AlertBanner>{error}</AlertBanner>}
           {checkedInToday && !message && (
-            <p className="sub">오늘 출근 처리가 이미 완료되었습니다.</p>
+            <p className="text-[13px] leading-relaxed text-slate-400">오늘 출근 처리가 이미 완료되었습니다.</p>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
-            <button
+          <div className="flex w-full flex-col gap-2.5">
+            <Button
+              variant="ok"
+              size="lg"
               onClick={() => startScan('CHECK_IN')}
-              className="btn btn-ok"
               disabled={checkedInToday}
+              className="w-full"
             >
-              출근 QR 스캔
-            </button>
-            <button onClick={() => startScan('CHECK_OUT')} className="btn btn-crit">
-              퇴근 QR 스캔
-            </button>
+              <LogIn className="h-4 w-4" /> 출근 QR 스캔
+            </Button>
+            <Button variant="crit" size="lg" onClick={() => startScan('CHECK_OUT')} className="w-full">
+              <LogOut className="h-4 w-4" /> 퇴근 QR 스캔
+            </Button>
           </div>
         </>
       )}
 
-      <video ref={videoRef} playsInline muted className="scan-video" style={{ display: stage === 'scanning' ? 'block' : 'none' }} />
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
+      <video
+        ref={videoRef}
+        playsInline
+        muted
+        className={`w-full max-w-[280px] rounded-xl ${stage === 'scanning' ? 'block' : 'hidden'}`}
+      />
+      <canvas ref={canvasRef} className="hidden" />
       {stage === 'scanning' && (
-        <button onClick={() => { stopScan(); setStage('ready'); }} className="btn btn-ghost" style={{ width: '100%' }}>
-          취소
-        </button>
+        <Button variant="ghost" size="lg" onClick={() => { stopScan(); setStage('ready'); }} className="w-full">
+          <X className="h-4 w-4" /> 취소
+        </Button>
       )}
     </Shell>
   );
@@ -256,8 +273,10 @@ export default function CheckIn() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="admin-root mobile-shell">
-      <div className="mobile-card">{children}</div>
+    <div className="flex min-h-screen items-center justify-center bg-slate-950 bg-[radial-gradient(circle_at_30%_20%,#1e1b4b,#020617_55%)] px-6 py-10">
+      <div className="flex w-full max-w-sm flex-col items-center gap-3.5 rounded-2xl border border-white/10 bg-slate-900/80 p-7 text-center shadow-2xl shadow-black/50 backdrop-blur">
+        {children}
+      </div>
     </div>
   );
 }

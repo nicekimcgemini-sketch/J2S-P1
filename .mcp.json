@@ -3,6 +3,10 @@
     "supabase": {
       "type": "http",
       "url": "https://mcp.supabase.com/mcp?project_ref=vioxyttujzxywpfazfei&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching"
+    },
+    "tailwindcss-mcp-server": {
+      "command": "npx",
+      "args": ["-y", "tailwindcss-mcp-server"]
     }
   }
 }

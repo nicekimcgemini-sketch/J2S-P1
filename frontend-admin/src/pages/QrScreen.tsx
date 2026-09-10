@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { Activity, QrCode, RefreshCw, Smartphone } from 'lucide-react';
 import { qrApi } from '../services/api';
 
 const QR_REFRESH_INTERVAL = 55_000; // 55초마다 자동 갱신 (만료 5초 전)
@@ -40,74 +41,75 @@ export default function QrScreen() {
     return () => clearInterval(timer);
   }, [token]);
 
+  const low = remaining < 15;
+
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>출퇴근 QR 코드</h1>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-slate-950 bg-[radial-gradient(circle_at_50%_15%,#1e1b4b,#020617_55%)] px-4 py-10">
+      <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-slate-400">
+        <Activity className="h-4 w-4 text-brand-400" strokeWidth={2.25} />
+        출퇴근 QR 코드
+      </div>
 
-      {token ? (
-        <>
-          <div style={styles.qrWrapper}>
-            <QRCodeSVG value={token} size={300} level="H" />
+      <div className="flex flex-col items-center gap-5 rounded-3xl border border-white/10 bg-slate-900/70 p-8 shadow-2xl shadow-black/50 backdrop-blur">
+        {token ? (
+          <>
+            <div className="rounded-2xl bg-white p-5">
+              <QRCodeSVG value={token} size={280} level="H" />
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <p className="text-sm text-slate-400">
+                유효 시간{' '}
+                <strong className={`font-mono text-base tabular ${low ? 'text-rose-400' : 'text-white'}`}>
+                  {remaining}초
+                </strong>
+              </p>
+              <p className="font-mono text-xs text-slate-500">
+                만료: {expiresAt ? new Date(expiresAt).toLocaleTimeString('ko-KR', { hour12: false }) : '-'}
+              </p>
+            </div>
+          </>
+        ) : (
+          <div className="flex h-[330px] w-[280px] items-center justify-center text-sm text-slate-500">
+            QR 코드 로딩 중...
           </div>
-          <p style={styles.timer}>
-            유효 시간: <strong style={{ color: remaining < 15 ? 'red' : 'inherit' }}>{remaining}초</strong>
-          </p>
-          <p style={styles.expiry}>만료: {expiresAt ? new Date(expiresAt).toLocaleTimeString() : '-'}</p>
-        </>
-      ) : (
-        <p>QR 코드 로딩 중...</p>
-      )}
+        )}
 
-      <button
-        style={{ ...styles.button, opacity: loading ? 0.6 : 1 }}
-        onClick={fetchQr}
-        disabled={loading}
-      >
-        {loading ? '갱신 중...' : '새로고침'}
-      </button>
+        <button
+          onClick={fetchQr}
+          disabled={loading}
+          className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-500 disabled:opacity-60"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          {loading ? '갱신 중...' : '새로고침'}
+        </button>
+      </div>
 
       {showSetup ? (
-        <div style={styles.checkinBox}>
-          <p style={styles.checkinLabel}>최초 1회, 본인 휴대폰 카메라로 스캔하세요</p>
-          <QRCodeSVG value={CHECKIN_URL} size={110} level="M" />
-          <p style={styles.checkinCaption}>모바일 체크인 페이지 열기</p>
-          <button style={styles.setupToggle} onClick={() => setShowSetup(false)}>닫기</button>
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/70 p-5 backdrop-blur">
+          <p className="flex items-center gap-1.5 text-xs text-slate-400">
+            <Smartphone className="h-3.5 w-3.5" />
+            최초 1회, 본인 휴대폰 카메라로 스캔하세요
+          </p>
+          <div className="rounded-xl bg-white p-3">
+            <QRCodeSVG value={CHECKIN_URL} size={110} level="M" />
+          </div>
+          <p className="text-[13px] font-semibold text-slate-300">모바일 체크인 페이지 열기</p>
+          <button
+            onClick={() => setShowSetup(false)}
+            className="mt-1 text-xs text-slate-500 underline underline-offset-2 hover:text-slate-300"
+          >
+            닫기
+          </button>
         </div>
       ) : (
-        <button style={styles.setupToggle} onClick={() => setShowSetup(true)}>
+        <button
+          onClick={() => setShowSetup(true)}
+          className="inline-flex items-center gap-1.5 text-xs text-slate-500 underline underline-offset-2 hover:text-slate-300"
+        >
+          <QrCode className="h-3.5 w-3.5" />
           최초 이용자이신가요? 등록 QR 보기
         </button>
       )}
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex', flexDirection: 'column', alignItems: 'center',
-    justifyContent: 'center', minHeight: '100vh', background: '#f0f2f5', gap: 16,
-  },
-  title: { fontSize: 28, fontWeight: 700, marginBottom: 8 },
-  qrWrapper: {
-    background: '#fff', padding: 24, borderRadius: 16,
-    boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
-  },
-  timer: { fontSize: 20, marginTop: 16 },
-  expiry: { fontSize: 13, color: '#888' },
-  button: {
-    marginTop: 16, padding: '12px 32px', fontSize: 16, fontWeight: 600,
-    background: '#1677ff', color: '#fff', border: 'none', borderRadius: 8,
-    cursor: 'pointer',
-  },
-  checkinBox: {
-    marginTop: 16, padding: 16, background: '#fff', borderRadius: 12,
-    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-    boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
-  },
-  checkinLabel: { fontSize: 12, color: '#888', margin: 0 },
-  checkinCaption: { fontSize: 13, fontWeight: 600, color: '#333', margin: 0 },
-  setupToggle: {
-    marginTop: 4, padding: '6px 4px', fontSize: 12.5, color: '#888',
-    background: 'transparent', border: 'none', textDecoration: 'underline', cursor: 'pointer',
-  },
-};

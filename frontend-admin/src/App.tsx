@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { Activity, BarChart3, Clock, LogOut, ShieldCheck, Smartphone } from 'lucide-react';
 import QrScreen from './pages/QrScreen';
 import CheckIn from './pages/CheckIn';
 import DeviceManagement from './pages/DeviceManagement';
@@ -15,14 +16,34 @@ function RequireAdmin() {
   return <AdminLayout />;
 }
 
-function Clock() {
+function LiveDot() {
+  return (
+    <span className="relative flex h-2 w-2">
+      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+    </span>
+  );
+}
+
+function Clock24() {
   const [now, setNow] = useState(new Date());
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
-  return <span className="clock">{now.toLocaleString('ko-KR', { hour12: false })}</span>;
+  return (
+    <span className="flex items-center gap-1.5 font-mono tabular text-xs text-slate-500">
+      <Clock className="h-3.5 w-3.5" strokeWidth={2} />
+      {now.toLocaleString('ko-KR', { hour12: false })}
+    </span>
+  );
 }
+
+const navItems = [
+  { to: '/admin/devices', label: '기기 관리', icon: Smartphone, section: '모니터링' },
+  { to: '/admin/logs', label: '출퇴근 통계', icon: BarChart3, section: '모니터링' },
+  { to: '/admin/ip-whitelist', label: '허용 IP 관리', icon: ShieldCheck, section: '설정' },
+] as const;
 
 function AdminLayout() {
   const navigate = useNavigate();
@@ -32,25 +53,64 @@ function AdminLayout() {
     navigate('/admin/login', { replace: true });
   };
 
-  const navClass = ({ isActive }: { isActive: boolean }) => 'nav-link' + (isActive ? ' active' : '');
+  let lastSection = '';
 
   return (
-    <div className="admin-root app-shell">
-      <nav className="app-sidebar">
-        <div className="brand"><span className="dot" /> 출퇴근 모니터링</div>
-        <span className="nav-section-label">모니터링</span>
-        <NavLink className={navClass} to="/admin/devices">기기 관리</NavLink>
-        <NavLink className={navClass} to="/admin/logs">출퇴근 통계</NavLink>
-        <span className="nav-section-label">설정</span>
-        <NavLink className={navClass} to="/admin/ip-whitelist">허용 IP 관리</NavLink>
-        <div className="nav-spacer" />
-        <button onClick={handleLogout} className="nav-link logout">로그아웃</button>
-      </nav>
-      <div className="app-main">
-        <div className="app-topbar">
-          <span>J2S-P1 · Attendance Ops Console</span>
-          <Clock />
+    <div className="flex min-h-screen bg-slate-950 text-slate-100">
+      <nav className="flex w-60 flex-none flex-col gap-0.5 border-r border-white/5 bg-slate-900/60 p-4 backdrop-blur">
+        <div className="mb-6 flex items-center gap-2 px-2 py-1">
+          <Activity className="h-5 w-5 text-brand-400" strokeWidth={2.25} />
+          <span className="text-sm font-bold tracking-tight text-white">출퇴근 모니터링</span>
         </div>
+
+        {navItems.map(item => {
+          const showSection = item.section !== lastSection;
+          lastSection = item.section;
+          const Icon = item.icon;
+          return (
+            <div key={item.to}>
+              {showSection && (
+                <div className="px-3 pb-1.5 pt-3.5 text-[10.5px] font-semibold uppercase tracking-wider text-slate-500">
+                  {item.section}
+                </div>
+              )}
+              <NavLink
+                to={item.to}
+                className={({ isActive }) =>
+                  [
+                    'flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13.5px] font-medium transition-colors',
+                    isActive
+                      ? 'bg-brand-600 text-white shadow-sm shadow-brand-900/40'
+                      : 'text-slate-400 hover:bg-white/5 hover:text-white',
+                  ].join(' ')
+                }
+              >
+                <Icon className="h-4 w-4" strokeWidth={2} />
+                {item.label}
+              </NavLink>
+            </div>
+          );
+        })}
+
+        <div className="flex-1" />
+
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2.5 rounded-lg border border-white/10 px-3 py-2 text-left text-[13.5px] font-medium text-slate-400 transition-colors hover:border-white/20 hover:text-white"
+        >
+          <LogOut className="h-4 w-4" strokeWidth={2} />
+          로그아웃
+        </button>
+      </nav>
+
+      <div className="flex min-h-screen flex-1 flex-col bg-slate-950">
+        <header className="flex h-[52px] flex-none items-center justify-between border-b border-white/5 bg-slate-900/40 px-6 backdrop-blur">
+          <span className="flex items-center gap-2 text-xs font-medium text-slate-500">
+            <LiveDot />
+            J2S-P1 · Attendance Ops Console
+          </span>
+          <Clock24 />
+        </header>
         <Outlet />
       </div>
     </div>
