@@ -31,6 +31,18 @@ export default function CheckIn() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
+  // 현장 QR을 스마트폰 카메라로 찍어 들어온 경우 ?t= 로 토큰이 딸려온다.
+  // 이 토큰이 있으면 페이지 안에서 다시 카메라를 열 필요 없이 버튼만 누르면 바로 처리된다.
+  const [urlToken, setUrlToken] = useState<string | null>(
+    () => new URLSearchParams(window.location.search).get('t'),
+  );
+  // 최초 마운트 시 1회만 실행 — 새로고침해도 토큰이 주소창에 남아 재사용/노출되지 않도록 정리 (메모리에는 유지)
+  useEffect(() => {
+    if (urlToken) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -145,6 +157,21 @@ export default function CheckIn() {
 
   useEffect(() => () => stopScan(), [stopScan]);
 
+  // 출근/퇴근 버튼 클릭 시: URL로 넘어온 토큰이 있으면 바로 처리, 없으면(북마크 등으로
+  // 토큰 없이 들어온 경우) 기존처럼 페이지 안 카메라로 QR을 다시 스캔한다.
+  const runCheck = (mode: 'CHECK_IN' | 'CHECK_OUT') => {
+    if (urlToken) {
+      const token = urlToken;
+      setUrlToken(null); // 1회성으로 소모 — 재시도는 항상 새 QR을 다시 찍게 한다
+      modeRef.current = mode;
+      setError('');
+      setMessage('');
+      handleScanned(token);
+    } else {
+      startScan(mode);
+    }
+  };
+
   const Brand = () => (
     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
       <span className="relative flex h-1.5 w-1.5">
@@ -237,19 +264,22 @@ export default function CheckIn() {
           {checkedInToday && !message && (
             <p className="text-[13px] leading-relaxed text-slate-400">오늘 출근 처리가 이미 완료되었습니다.</p>
           )}
+          {urlToken && !message && !error && (
+            <p className="text-[13px] leading-relaxed text-slate-400">QR 인식 완료. 아래에서 선택하세요.</p>
+          )}
 
           <div className="flex w-full flex-col gap-2.5">
             <Button
               variant="ok"
               size="lg"
-              onClick={() => startScan('CHECK_IN')}
+              onClick={() => runCheck('CHECK_IN')}
               disabled={checkedInToday}
               className="w-full"
             >
-              <LogIn className="h-4 w-4" /> 출근 QR 스캔
+              <LogIn className="h-4 w-4" /> {urlToken ? '출근 처리' : '출근 QR 스캔'}
             </Button>
-            <Button variant="crit" size="lg" onClick={() => startScan('CHECK_OUT')} className="w-full">
-              <LogOut className="h-4 w-4" /> 퇴근 QR 스캔
+            <Button variant="crit" size="lg" onClick={() => runCheck('CHECK_OUT')} className="w-full">
+              <LogOut className="h-4 w-4" /> {urlToken ? '퇴근 처리' : '퇴근 QR 스캔'}
             </Button>
           </div>
         </>

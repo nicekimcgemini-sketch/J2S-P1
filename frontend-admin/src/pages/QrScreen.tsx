@@ -1,17 +1,22 @@
 import { useEffect, useState, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Activity, QrCode, RefreshCw, Smartphone } from 'lucide-react';
+import { Activity, RefreshCw, Smartphone } from 'lucide-react';
 import { qrApi } from '../services/api';
 
 const QR_REFRESH_INTERVAL = 55_000; // 55초마다 자동 갱신 (만료 5초 전)
-const CHECKIN_URL = `${window.location.origin}/checkin`;
+
+// 체크인 페이지 주소에 토큰을 실어 보낸다 — 등록 여부와 상관없이
+// 폰 기본 카메라로 이 QR 하나만 찍으면 된다 (별도의 "등록용 QR"이 없다).
+// 등록 안 된 기기는 /checkin 쪽에서 토큰을 무시하고 등록 화면을 보여준다.
+function buildCheckinUrl(token: string): string {
+  return `${window.location.origin}/checkin?t=${encodeURIComponent(token)}`;
+}
 
 export default function QrScreen() {
   const [token, setToken] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [remaining, setRemaining] = useState(60);
   const [loading, setLoading] = useState(false);
-  const [showSetup, setShowSetup] = useState(false);
 
   const fetchQr = useCallback(async () => {
     setLoading(true);
@@ -54,7 +59,7 @@ export default function QrScreen() {
         {token ? (
           <>
             <div className="rounded-2xl bg-white p-5">
-              <QRCodeSVG value={token} size={280} level="H" />
+              <QRCodeSVG value={buildCheckinUrl(token)} size={280} level="H" />
             </div>
             <div className="flex flex-col items-center gap-1">
               <p className="text-sm text-slate-400">
@@ -84,32 +89,10 @@ export default function QrScreen() {
         </button>
       </div>
 
-      {showSetup ? (
-        <div className="flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/70 p-5 backdrop-blur">
-          <p className="flex items-center gap-1.5 text-xs text-slate-400">
-            <Smartphone className="h-3.5 w-3.5" />
-            최초 1회, 본인 휴대폰 카메라로 스캔하세요
-          </p>
-          <div className="rounded-xl bg-white p-3">
-            <QRCodeSVG value={CHECKIN_URL} size={110} level="M" />
-          </div>
-          <p className="text-[13px] font-semibold text-slate-300">모바일 체크인 페이지 열기</p>
-          <button
-            onClick={() => setShowSetup(false)}
-            className="mt-1 text-xs text-slate-500 underline underline-offset-2 hover:text-slate-300"
-          >
-            닫기
-          </button>
-        </div>
-      ) : (
-        <button
-          onClick={() => setShowSetup(true)}
-          className="inline-flex items-center gap-1.5 text-xs text-slate-500 underline underline-offset-2 hover:text-slate-300"
-        >
-          <QrCode className="h-3.5 w-3.5" />
-          최초 이용자이신가요? 등록 QR 보기
-        </button>
-      )}
+      <p className="flex items-center gap-1.5 text-xs text-slate-500">
+        <Smartphone className="h-3.5 w-3.5" />
+        스마트폰 카메라로 QR을 찍으면 접속됩니다. (최초 이용 시 자동으로 등록 화면으로 연결)
+      </p>
     </div>
   );
 }
