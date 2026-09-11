@@ -170,7 +170,13 @@ export default function CheckIn() {
       setMessage(activeMode === 'CHECK_IN' ? '출근 처리되었습니다.' : '퇴근 처리되었습니다.');
       setError('');
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'QR 처리에 실패했습니다. 다시 시도해주세요.');
+      const serverMessage = err?.response?.data?.message;
+      // QR은 한 번 쓰면 즉시 폐기된다 — 방금 다른 동작(출근 등)에 쓴 QR을 화면이 안 바뀐 채로
+      // 다시 스캔하면 이 메시지가 뜬다. 원인을 바로 알 수 있게 안내를 덧붙인다.
+      const hint = serverMessage === '유효하지 않은 QR 코드입니다.'
+        ? ' 방금 사용한 QR은 다시 쓸 수 없어요. 화면의 QR이 새로 바뀔 때까지(최대 1분) 기다렸다가 다시 스캔해주세요.'
+        : '';
+      setError((serverMessage || 'QR 처리에 실패했습니다. 다시 시도해주세요.') + hint);
       setMessage('');
     } finally {
       setStage('ready');
