@@ -83,12 +83,23 @@ public class AttendanceService {
     }
 
     @Transactional(readOnly = true)
-    public List<AttendanceLogDto> getLogs(LocalDate date) {
-        LocalDateTime start = date.atStartOfDay();
-        LocalDateTime end = date.atTime(LocalTime.MAX);
+    public List<AttendanceLogDto> getLogs(LocalDate startDate, LocalDate endDate, String employeeNo, String name) {
+        LocalDateTime start = startDate.atStartOfDay();
+        LocalDateTime end = endDate.atTime(LocalTime.MAX);
+        String normalizedEmployeeNo = (employeeNo == null || employeeNo.isBlank()) ? null : employeeNo.trim();
+        String normalizedName = (name == null || name.isBlank()) ? null : name.trim();
 
-        List<AttendanceLog> logs = attendanceLogRepository.findByDateRange(start, end);
+        List<AttendanceLog> logs = attendanceLogRepository.search(start, end, normalizedEmployeeNo, normalizedName);
         return logs.stream().map(AttendanceLogDto::from).toList();
+    }
+
+    @Transactional
+    public void deleteLog(Long id) {
+        if (!attendanceLogRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "출퇴근 기록을 찾을 수 없습니다.");
+        }
+        attendanceLogRepository.deleteById(id);
+        log.info("출퇴근 기록 삭제: id={}", id);
     }
 
     @Transactional(readOnly = true)

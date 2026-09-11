@@ -14,15 +14,20 @@ public interface AttendanceLogRepository extends JpaRepository<AttendanceLog, Lo
 
     List<AttendanceLog> findByWorkerIdOrderByCheckedAtDesc(Long workerId);
 
+    // 관리자 조회 화면용. employeeNo/name 은 null 이면 조건을 걸지 않는다.
     @Query("""
         SELECT a FROM AttendanceLog a
         JOIN FETCH a.worker w
         WHERE a.checkedAt BETWEEN :start AND :end
+          AND (:employeeNo IS NULL OR w.employeeNo = :employeeNo)
+          AND (:name IS NULL OR LOWER(w.name) LIKE LOWER(CONCAT('%', :name, '%')))
         ORDER BY a.checkedAt DESC
     """)
-    List<AttendanceLog> findByDateRange(
+    List<AttendanceLog> search(
         @Param("start") LocalDateTime start,
-        @Param("end") LocalDateTime end
+        @Param("end") LocalDateTime end,
+        @Param("employeeNo") String employeeNo,
+        @Param("name") String name
     );
 
     // 오늘 출근 여부 확인 (중복 체크 방지)

@@ -77,11 +77,19 @@ export const deviceApi = {
   remove: (id: number) => api.delete(`/admin/devices/${id}`),
 };
 
+export interface AttendanceLogQuery {
+  startDate?: string;
+  endDate?: string;
+  employeeNo?: string;
+  name?: string;
+}
+
 export const attendanceApi = {
-  getLogs: (date: string) =>
+  getLogs: (query: AttendanceLogQuery) =>
     api.get<AttendanceLog[]>('/admin/attendance/logs', {
-      params: { date },
+      params: query,
     }).then(r => r.data),
+  deleteLog: (id: number) => api.delete(`/admin/attendance/logs/${id}`),
   checkIn: (hardwareId: string, qrToken: string) =>
     api.post('/attendance/check-in', { hardwareId, qrToken }),
   checkOut: (hardwareId: string, qrToken: string) =>

@@ -16,13 +16,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
 /**
@@ -212,5 +215,43 @@ class AttendanceServiceTest {
         assertThat(result.checkedIn()).isTrue();
         assertThat(result.checkInAt()).isEqualTo(checkInTime);
         assertThat(result.checkOutAt()).isEqualTo(latestCheckOut);
+    }
+
+    @Test
+    void getLogs_공백인_필터는_null로_정규화해서_전달한다() {
+        when(attendanceLogRepository.search(any(), any(), isNull(), isNull())).thenReturn(List.of());
+
+        attendanceService.getLogs(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31), "  ", " ");
+
+        verify(attendanceLogRepository).search(any(), any(), isNull(), isNull());
+    }
+
+    @Test
+    void getLogs_필터를_그대로_전달한다() {
+        when(attendanceLogRepository.search(any(), any(), eq("S00001"), eq("홍"))).thenReturn(List.of());
+
+        attendanceService.getLogs(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31), "S00001", "홍");
+
+        verify(attendanceLogRepository).search(any(), any(), eq("S00001"), eq("홍"));
+    }
+
+    @Test
+    void deleteLog_존재하지_않으면_404() {
+        when(attendanceLogRepository.existsById(1L)).thenReturn(false);
+
+        assertThatThrownBy(() -> attendanceService.deleteLog(1L))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("404");
+
+        verify(attendanceLogRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteLog_존재하면_삭제된다() {
+        when(attendanceLogRepository.existsById(1L)).thenReturn(true);
+
+        attendanceService.deleteLog(1L);
+
+        verify(attendanceLogRepository).deleteById(1L);
     }
 }

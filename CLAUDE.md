@@ -69,7 +69,8 @@ cd mobile-app; npm install; npm run typecheck
 | `PATCH /api/admin/devices/{id}/status?status=` | ADMIN | APPROVED / REVOKED |
 | `DELETE /api/admin/devices/{id}` | ADMIN | 출퇴근 기록이 있어도 삭제 가능. 기록은 보존하고 `attendance_logs.device_id` 만 null 처리 |
 | `GET/POST/DELETE /api/admin/ip-whitelist[/{id}]` | ADMIN | |
-| `GET /api/admin/attendance/logs?date=YYYY-MM-DD` | ADMIN | |
+| `GET /api/admin/attendance/logs?startDate=&endDate=&employeeNo=&name=` | ADMIN | 모두 생략 가능(생략 시 오늘 하루). `employeeNo` 는 정확히 일치, `name` 은 부분 일치(대소문자 무시) |
+| `DELETE /api/admin/attendance/logs/{id}` | ADMIN | 출퇴근 기록 1건 삭제 |
 
 프론트의 타입/호출은 `frontend-admin/src/services/api.ts` 한 곳에 모여 있다. 백엔드 응답 형태를 바꾸면 이 파일의 인터페이스도 같이 고친다.
 

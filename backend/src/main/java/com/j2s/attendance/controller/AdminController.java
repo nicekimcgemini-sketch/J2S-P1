@@ -83,10 +83,23 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
-    // 날짜별 출퇴근 로그 조회
+    // 기간/직원 조건별 출퇴근 로그 조회. startDate/endDate 를 생략하면 오늘 하루로 조회한다.
     @GetMapping("/attendance/logs")
     public ResponseEntity<List<AttendanceLogDto>> getLogs(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return ResponseEntity.ok(attendanceService.getLogs(date));
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String employeeNo,
+            @RequestParam(required = false) String name) {
+        LocalDate today = LocalDate.now();
+        LocalDate resolvedStart = startDate != null ? startDate : (endDate != null ? endDate : today);
+        LocalDate resolvedEnd = endDate != null ? endDate : (startDate != null ? startDate : today);
+        return ResponseEntity.ok(attendanceService.getLogs(resolvedStart, resolvedEnd, employeeNo, name));
+    }
+
+    // 출퇴근 기록 삭제
+    @DeleteMapping("/attendance/logs/{id}")
+    public ResponseEntity<Void> deleteLog(@PathVariable Long id) {
+        attendanceService.deleteLog(id);
+        return ResponseEntity.noContent().build();
     }
 }
