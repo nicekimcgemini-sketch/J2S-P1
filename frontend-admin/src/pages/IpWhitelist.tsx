@@ -64,7 +64,7 @@ export default function IpWhitelist() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-[13px]">
               <thead>
-                <tr className="border-b border-slate-800 bg-black/20 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <tr className="border-b border-slate-100 bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   <th className="whitespace-nowrap px-3.5 py-2.5">IP 주소</th>
                   <th className="whitespace-nowrap px-3.5 py-2.5">설명</th>
                   <th className="whitespace-nowrap px-3.5 py-2.5">등록일</th>
@@ -73,9 +73,9 @@ export default function IpWhitelist() {
               </thead>
               <tbody>
                 {entries.map(entry => (
-                  <tr key={entry.id} className="border-b border-slate-800 last:border-0 hover:bg-slate-800/40">
-                    <td className="px-3.5 py-2.5 font-mono text-[12.5px] text-slate-200">{entry.ipAddress}</td>
-                    <td className="px-3.5 py-2.5 text-slate-300">{entry.description}</td>
+                  <tr key={entry.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                    <td className="px-3.5 py-2.5 font-mono text-[12.5px] text-slate-800">{entry.ipAddress}</td>
+                    <td className="px-3.5 py-2.5 text-slate-600">{entry.description}</td>
                     <td className="whitespace-nowrap px-3.5 py-2.5 font-mono text-xs text-slate-500">
                       {new Date(entry.createdAt).toLocaleDateString('ko-KR')}
                     </td>

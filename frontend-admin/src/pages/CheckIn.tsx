@@ -201,21 +201,23 @@ export default function CheckIn() {
   };
 
   const Brand = () => (
-    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
       <span className="relative flex h-1.5 w-1.5">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
       </span>
       출퇴근 체크인
     </div>
   );
 
+  const todayLabel = new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' });
+
   if (!isMobile) {
     return (
       <Shell>
         <Brand />
-        <h2 className="text-lg font-semibold text-white">모바일 기기에서만 접속할 수 있습니다</h2>
-        <p className="text-[13px] leading-relaxed text-slate-400">본인 휴대폰으로 QR을 스캔해 접속해주세요.</p>
+        <h2 className="text-lg font-bold text-slate-900">모바일 기기에서만 접속할 수 있습니다</h2>
+        <p className="text-[13px] leading-relaxed text-slate-500">본인 휴대폰으로 QR을 스캔해 접속해주세요.</p>
       </Shell>
     );
   }
@@ -224,7 +226,7 @@ export default function CheckIn() {
     return (
       <Shell>
         <Brand />
-        <p className="text-[13px] text-slate-400">확인 중...</p>
+        <p className="text-[13px] text-slate-500">확인 중...</p>
       </Shell>
     );
   }
@@ -233,8 +235,8 @@ export default function CheckIn() {
     return (
       <Shell>
         <Brand />
-        <h2 className="text-lg font-semibold text-white">기기 등록</h2>
-        <p className="text-[13px] leading-relaxed text-slate-400">최초 1회 이름과 사번을 입력하면 관리자 승인 후 사용할 수 있습니다.</p>
+        <h2 className="text-lg font-bold text-slate-900">기기 등록</h2>
+        <p className="text-[13px] leading-relaxed text-slate-500">최초 1회 이름과 사번을 입력하면 관리자 승인 후 사용할 수 있습니다.</p>
         <form onSubmit={handleRegister} className="flex w-full flex-col gap-3">
           <input
             className={`${inputClassLg} w-full`}
@@ -264,7 +266,7 @@ export default function CheckIn() {
       <Shell>
         <Brand />
         <StatusPill tone="warn">승인 대기 중</StatusPill>
-        <p className="text-[13px] leading-relaxed text-slate-400">관리자 승인 후 자동으로 사용할 수 있습니다.</p>
+        <p className="text-[13px] leading-relaxed text-slate-500">관리자 승인 후 자동으로 사용할 수 있습니다.</p>
       </Shell>
     );
   }
@@ -274,55 +276,74 @@ export default function CheckIn() {
       <Shell>
         <Brand />
         <StatusPill tone="crit">사용 권한 회수됨</StatusPill>
-        <p className="text-[13px] leading-relaxed text-slate-400">관리자에게 문의해주세요.</p>
+        <p className="text-[13px] leading-relaxed text-slate-500">관리자에게 문의해주세요.</p>
       </Shell>
     );
   }
 
   // ready or scanning
+  const nextAction: 'CHECK_IN' | 'CHECK_OUT' | null =
+    !checkedInToday ? 'CHECK_IN' : !checkOutAt ? 'CHECK_OUT' : null;
+
   return (
     <Shell>
-      <Brand />
-      {workerName && <h2 className="text-lg font-semibold text-white">{workerName}님</h2>}
+      {workerName && (
+        <div className="flex w-full items-center gap-3">
+          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-brand-100 font-display text-lg font-bold text-brand-700">
+            {workerName.slice(0, 1)}
+          </span>
+          <div className="flex flex-col items-start">
+            <span className="text-[15px] font-bold text-slate-900">{workerName}님</span>
+            <span className="text-[12px] text-slate-400">{todayLabel}</span>
+          </div>
+        </div>
+      )}
 
       {stage === 'ready' && (
         <>
           {message && <StatusPill tone="ok">{message}</StatusPill>}
           {error && <AlertBanner>{error}</AlertBanner>}
           {urlToken && !message && !error && (
-            <p className="text-[13px] leading-relaxed text-slate-400">QR 인식 완료. 아래에서 선택하세요.</p>
+            <p className="text-[13px] leading-relaxed text-slate-500">QR 인식 완료. 아래에서 선택하세요.</p>
+          )}
+
+          {nextAction ? (
+            <button
+              onClick={() => runCheck(nextAction)}
+              className={[
+                'flex h-40 w-40 flex-col items-center justify-center gap-1.5 rounded-full text-white shadow-lg transition-transform active:scale-95',
+                nextAction === 'CHECK_IN'
+                  ? 'bg-emerald-600 shadow-emerald-900/20 hover:bg-emerald-700'
+                  : 'bg-rose-600 shadow-rose-900/20 hover:bg-rose-700',
+              ].join(' ')}
+            >
+              {nextAction === 'CHECK_IN' ? <LogIn className="h-7 w-7" /> : <LogOut className="h-7 w-7" />}
+              <span className="text-lg font-bold">
+                {nextAction === 'CHECK_IN'
+                  ? (urlToken ? '출근하기' : '출근 QR 스캔')
+                  : (urlToken ? '퇴근하기' : '퇴근 QR 스캔')}
+              </span>
+            </button>
+          ) : (
+            <StatusPill tone="ok">오늘 퇴근 처리가 완료됐어요</StatusPill>
           )}
 
           {(checkInAt || checkOutAt) && (
-            <div className="flex w-full flex-col gap-1.5 border border-slate-800 px-4 py-3">
+            <div className="flex w-full flex-col gap-1.5 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
               {checkInAt && (
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="text-slate-500">출근</span>
-                  <span className="font-mono tabular text-sm font-semibold text-emerald-400">{formatTime(checkInAt)}</span>
+                  <span className="font-mono tabular text-sm font-semibold text-emerald-600">{formatTime(checkInAt)}</span>
                 </div>
               )}
               {checkOutAt && (
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="text-slate-500">퇴근</span>
-                  <span className="font-mono tabular text-sm font-semibold text-rose-400">{formatTime(checkOutAt)}</span>
+                  <span className="font-mono tabular text-sm font-semibold text-rose-600">{formatTime(checkOutAt)}</span>
                 </div>
               )}
             </div>
           )}
-
-          <div className="flex w-full flex-col gap-2.5">
-            {!checkedInToday ? (
-              <Button variant="ok" size="lg" onClick={() => runCheck('CHECK_IN')} className="w-full">
-                <LogIn className="h-4 w-4" /> {urlToken ? '출근 처리' : '출근 QR 스캔'}
-              </Button>
-            ) : !checkOutAt ? (
-              <Button variant="crit" size="lg" onClick={() => runCheck('CHECK_OUT')} className="w-full">
-                <LogOut className="h-4 w-4" /> {urlToken ? '퇴근 처리' : '퇴근 QR 스캔'}
-              </Button>
-            ) : (
-              <StatusPill tone="ok">오늘 퇴근 처리가 완료됐어요</StatusPill>
-            )}
-          </div>
         </>
       )}
 
@@ -330,7 +351,7 @@ export default function CheckIn() {
         ref={videoRef}
         playsInline
         muted
-        className={`w-full max-w-[280px] rounded-xl ${stage === 'scanning' ? 'block' : 'hidden'}`}
+        className={`w-full max-w-[280px] rounded-2xl ${stage === 'scanning' ? 'block' : 'hidden'}`}
       />
       <canvas ref={canvasRef} className="hidden" />
       {stage === 'scanning' && (
@@ -344,8 +365,8 @@ export default function CheckIn() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-6 py-10">
-      <div className="flex w-full max-w-sm flex-col items-center gap-3.5 border border-slate-800 border-t-2 border-t-brand-500 bg-slate-900 p-7 text-center">
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-6 py-10">
+      <div className="flex w-full max-w-sm flex-col items-center gap-4 rounded-3xl border border-slate-200 bg-white p-7 text-center shadow-sm shadow-slate-900/5">
         {children}
       </div>
     </div>

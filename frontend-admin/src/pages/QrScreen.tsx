@@ -67,32 +67,32 @@ export default function QrScreen() {
   const low = remaining < 15;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-slate-950 px-4 py-10">
-      <div className="flex items-center gap-2 text-[13px] font-medium text-slate-400">
-        <Activity className="h-4 w-4 text-brand-400" strokeWidth={2} />
+    <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-slate-100 px-4 py-10">
+      <div className="flex items-center gap-2 text-[13px] font-medium text-slate-500">
+        <Activity className="h-4 w-4 text-brand-600" strokeWidth={2} />
         출퇴근 QR 코드
       </div>
 
-      <div className="flex flex-col items-center gap-5 border border-slate-800 border-t-2 border-t-brand-500 bg-slate-900 p-8">
+      <div className="flex flex-col items-center gap-5 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm shadow-slate-900/5">
         {token ? (
           <>
-            <div className="bg-white p-5">
+            <div className="rounded-2xl border border-slate-100 bg-white p-5">
               <QRCodeSVG value={buildCheckinUrl(token)} size={280} level="H" />
             </div>
             <div className="flex flex-col items-center gap-1">
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-slate-500">
                 유효 시간{' '}
-                <strong className={`font-mono text-base tabular ${low ? 'text-rose-400' : 'text-white'}`}>
+                <strong className={`font-mono text-base tabular ${low ? 'text-rose-600' : 'text-slate-900'}`}>
                   {remaining}초
                 </strong>
               </p>
-              <p className="font-mono text-xs text-slate-500">
+              <p className="font-mono text-xs text-slate-400">
                 만료: {expiresAt ? new Date(expiresAt).toLocaleTimeString('ko-KR', { hour12: false }) : '-'}
               </p>
             </div>
           </>
         ) : (
-          <div className="flex h-[330px] w-[280px] items-center justify-center text-sm text-slate-500">
+          <div className="flex h-[330px] w-[280px] items-center justify-center text-sm text-slate-400">
             QR 코드 로딩 중...
           </div>
         )}
@@ -100,31 +100,31 @@ export default function QrScreen() {
         <button
           onClick={fetchQr}
           disabled={loading}
-          className="inline-flex items-center gap-2 bg-brand-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-500 disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:opacity-60"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           {loading ? '갱신 중...' : '새로고침'}
         </button>
       </div>
 
-      <div className="flex w-full max-w-xl flex-col gap-5 border-t border-slate-800 pt-6">
-        <span className="font-display text-base font-semibold text-slate-200">이용 방법</span>
+      <div className="flex w-full max-w-xl flex-col gap-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-900/5">
+        <span className="font-display text-base font-bold text-slate-900">이용 방법</span>
 
         <ol className="flex flex-col gap-4">
           {STEPS.map((step, i) => (
             <li key={step.title} className="flex gap-4">
-              <span className="font-display w-6 flex-none text-lg font-semibold leading-tight text-brand-400">
+              <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-100 text-[13px] font-bold text-brand-700">
                 {i + 1}
               </span>
               <div className="flex flex-col gap-0.5">
-                <p className="text-[13.5px] font-semibold text-white">{step.title}</p>
-                <p className="text-[13px] leading-relaxed text-slate-400">{step.body}</p>
+                <p className="text-[13.5px] font-semibold text-slate-900">{step.title}</p>
+                <p className="text-[13px] leading-relaxed text-slate-500">{step.body}</p>
               </div>
             </li>
           ))}
         </ol>
 
-        <p className="border-t border-slate-800 pt-3 text-[11.5px] text-slate-500">
+        <p className="border-t border-slate-100 pt-3 text-[11.5px] text-slate-400">
           QR은 한 번 쓰이면 곧바로(최대 2초 내) 새로 바뀝니다. 항상 화면에 떠 있는 QR을 다시 찍어주세요.
         </p>
       </div>

@@ -94,16 +94,16 @@ export default function DeviceManagement() {
 
       {error && <AlertBanner>{error}</AlertBanner>}
 
-      <div className="overflow-hidden border border-slate-800 bg-slate-900">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-4 py-3">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-900/5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
           <div className="flex gap-1.5">
             {(['PENDING', 'ALL'] as const).map(f => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
                 className={[
-                  'px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors',
-                  filter === f ? 'bg-brand-600 text-white' : 'border border-slate-700 text-slate-400 hover:text-white',
+                  'rounded-xl px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors',
+                  filter === f ? 'bg-brand-600 text-white' : 'border border-slate-200 text-slate-500 hover:text-slate-900',
                 ].join(' ')}
               >
                 {f === 'PENDING' ? '승인 대기' : '전체'}
@@ -133,7 +133,7 @@ export default function DeviceManagement() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-[13px]">
               <thead>
-                <tr className="border-b border-slate-800 bg-black/20 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <tr className="border-b border-slate-100 bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   <th className="whitespace-nowrap px-3.5 py-2.5">
                     <input
                       type="checkbox"
@@ -154,7 +154,7 @@ export default function DeviceManagement() {
               </thead>
               <tbody>
                 {devices.map(d => (
-                  <tr key={d.id} className="border-b border-slate-800 last:border-0 hover:bg-slate-800/40">
+                  <tr key={d.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
                     <td className="px-3.5 py-2.5">
                       <input
                         type="checkbox"
@@ -163,10 +163,10 @@ export default function DeviceManagement() {
                         className="accent-brand-500"
                       />
                     </td>
-                    <td className="px-3.5 py-2.5 font-medium text-slate-200">{d.worker.name}</td>
-                    <td className="px-3.5 py-2.5 font-mono text-[12.5px] text-slate-300">{d.worker.employeeNo}</td>
-                    <td className="max-w-[220px] truncate px-3.5 py-2.5 text-slate-300">{d.deviceName}</td>
-                    <td className="px-3.5 py-2.5 text-slate-400">{d.osType}</td>
+                    <td className="px-3.5 py-2.5 font-medium text-slate-800">{d.worker.name}</td>
+                    <td className="px-3.5 py-2.5 font-mono text-[12.5px] text-slate-600">{d.worker.employeeNo}</td>
+                    <td className="max-w-[220px] truncate px-3.5 py-2.5 text-slate-600">{d.deviceName}</td>
+                    <td className="px-3.5 py-2.5 text-slate-500">{d.osType}</td>
                     <td className="px-3.5 py-2.5">
                       <span className="font-mono text-xs text-slate-500">{d.hardwareId}</span>
                     </td>

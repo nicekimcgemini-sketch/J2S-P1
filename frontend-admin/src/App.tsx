@@ -56,11 +56,11 @@ function AdminLayout() {
   let lastSection = '';
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-100">
-      <nav className="flex w-60 flex-none flex-col border-r border-slate-800 bg-slate-950 p-4">
-        <div className="mb-6 flex items-center gap-2 border-b border-slate-800 px-2 pb-4">
-          <Activity className="h-4.5 w-4.5 text-brand-400" strokeWidth={2} />
-          <span className="font-display text-[15px] font-semibold text-white">출퇴근 모니터링</span>
+    <div className="flex min-h-screen bg-slate-100 text-slate-900">
+      <nav className="flex w-60 flex-none flex-col border-r border-slate-200 bg-white p-4">
+        <div className="mb-6 flex items-center gap-2 border-b border-slate-100 px-2 pb-4">
+          <Activity className="h-4.5 w-4.5 text-brand-600" strokeWidth={2} />
+          <span className="font-display text-[15px] font-bold text-slate-900">출퇴근 모니터링</span>
         </div>
 
         {navItems.map(item => {
@@ -70,7 +70,7 @@ function AdminLayout() {
           return (
             <div key={item.to}>
               {showSection && (
-                <div className="px-3 pb-1.5 pt-3.5 text-[10.5px] font-semibold uppercase tracking-wider text-slate-600">
+                <div className="px-3 pb-1.5 pt-3.5 text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">
                   {item.section}
                 </div>
               )}
@@ -78,10 +78,10 @@ function AdminLayout() {
                 to={item.to}
                 className={({ isActive }) =>
                   [
-                    'flex items-center gap-2.5 border-l-2 px-3 py-2 text-[13.5px] font-medium transition-colors',
+                    'flex items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-medium transition-colors',
                     isActive
-                      ? 'border-brand-500 bg-brand-500/10 text-white'
-                      : 'border-transparent text-slate-400 hover:text-white',
+                      ? 'bg-brand-600 text-white'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900',
                   ].join(' ')
                 }
               >
@@ -96,15 +96,15 @@ function AdminLayout() {
 
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2.5 border border-slate-800 px-3 py-2 text-left text-[13.5px] font-medium text-slate-400 transition-colors hover:border-slate-600 hover:text-white"
+          className="flex items-center gap-2.5 rounded-xl border border-slate-200 px-3 py-2 text-left text-[13.5px] font-medium text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900"
         >
           <LogOut className="h-4 w-4" strokeWidth={2} />
           로그아웃
         </button>
       </nav>
 
-      <div className="flex min-h-screen flex-1 flex-col bg-slate-950">
-        <header className="flex h-[52px] flex-none items-center justify-between border-b border-slate-800 px-6">
+      <div className="flex min-h-screen flex-1 flex-col bg-slate-100">
+        <header className="flex h-[52px] flex-none items-center justify-between border-b border-slate-200 bg-white px-6">
           <span className="flex items-center gap-2 text-xs font-medium text-slate-500">
             <LiveDot />
             J2S-P1 · Attendance Ops Console

@@ -1,14 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
-  /* 큰 제목 전용 — 본문은 계속 sans. 화면 전체가 같은 서체 굵기 하나로만 위계를 표현하지
-     않도록, 제목만 세리프로 갈라서 "생성된 대시보드" 특유의 밋밋함을 피한다. */
-  --font-display: 'Noto Serif KR', 'Pretendard Variable', serif;
+  /* 참고 디자인(단풍 출근부 컨셉)에 세리프가 없어 본문과 같은 sans를 쓰되, 굵기로 위계를 낸다 */
+  --font-display: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-  /* 브랜드 액센트 (가을 단풍/호박 톤) — 로그인/사이드바 활성 상태/기본 버튼에 사용 */
+  /* 브랜드 액센트 (가을 단풍/호박 톤) — 큰 원형 출퇴근 버튼, 로그인, 활성 상태에 사용 */
   --color-brand-50: #fef6ee;
   --color-brand-100: #fdead2;
   --color-brand-200: #fad1a5;
@@ -21,19 +19,20 @@
   --color-brand-900: #6f2c13;
   --color-brand-950: #3c1408;
 
-  /* 기본 slate 팔레트를 따뜻한 톤(스톤 계열)으로 교체 — 화면 전반의 배경/테두리/본문
-     텍스트가 전부 slate-* 유틸리티를 쓰므로, 여기서 한 번만 바꾸면 앱 전체가 바뀐다. */
-  --color-slate-50: #fafaf9;
-  --color-slate-100: #f5f5f4;
-  --color-slate-200: #e7e5e4;
-  --color-slate-300: #d6d3d1;
-  --color-slate-400: #a8a29e;
-  --color-slate-500: #78716c;
-  --color-slate-600: #57534e;
-  --color-slate-700: #44403c;
-  --color-slate-800: #292524;
-  --color-slate-900: #1c1917;
-  --color-slate-950: #0c0a09;
+  /* 기본 slate 팔레트를 "단풍 출근부" 참고 디자인의 크림/베이지 톤으로 교체 — 화면 전반의
+     배경/테두리/본문 텍스트가 전부 slate-* 유틸리티를 쓰므로 여기서 한 번만 바꾸면 된다.
+     라이트 모드: 50이 가장 밝고(카드), 950이 가장 어둡다(본문 텍스트). */
+  --color-slate-50: #fdfbf6;
+  --color-slate-100: #f8f1e3;
+  --color-slate-200: #efe1c8;
+  --color-slate-300: #e0cca2;
+  --color-slate-400: #c7aa74;
+  --color-slate-500: #a8875a;
+  --color-slate-600: #86673f;
+  --color-slate-700: #6b5030;
+  --color-slate-800: #4a3820;
+  --color-slate-900: #332613;
+  --color-slate-950: #1f170b;
 }
 
 @layer base {
@@ -42,7 +41,7 @@
     text-rendering: optimizeLegibility;
   }
   body {
-    @apply bg-slate-950 font-sans text-slate-100;
+    @apply bg-slate-100 font-sans text-slate-900;
   }
 }
 
