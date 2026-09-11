@@ -344,7 +344,7 @@ export default function CheckIn() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 bg-[radial-gradient(circle_at_30%_20%,#1e1b4b,#020617_55%)] px-6 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-slate-950 bg-[radial-gradient(circle_at_30%_20%,#3c1408,#0c0a09_55%)] px-6 py-10">
       <div className="flex w-full max-w-sm flex-col items-center gap-3.5 rounded-2xl border border-white/10 bg-slate-900/80 p-7 text-center shadow-2xl shadow-black/50 backdrop-blur">
         {children}
       </div>

@@ -109,7 +109,7 @@ export default function QrScreen() {
   const low = remaining < 15;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-slate-950 bg-[radial-gradient(circle_at_50%_15%,#1e1b4b,#020617_55%)] px-4 py-10">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-slate-950 bg-[radial-gradient(circle_at_50%_15%,#3c1408,#0c0a09_55%)] px-4 py-10">
       <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-slate-400">
         <Activity className="h-4 w-4 text-brand-400" strokeWidth={2.25} />
         출퇴근 QR 코드

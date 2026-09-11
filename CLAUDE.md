@@ -79,7 +79,7 @@ cd mobile-app; npm install; npm run typecheck
 
 - **백엔드**: Lombok(`@RequiredArgsConstructor`, `@Getter/@Setter`, `@Builder`) 사용. 오류는 `ResponseStatusException` 으로 HTTP 상태와 한국어 메시지를 함께 던진다. `@Valid` 실패 메시지는 `GlobalExceptionHandler` 가 그대로 노출한다. 엔티티 직렬화 순환(`Worker.devices` 는 `@JsonIgnore`)을 깨지 말 것. 새 조회 API는 LAZY 연관을 `JOIN FETCH` 로 미리 가져온다(`findAllWithWorker` 패턴).
 - **DB 스키마**: `ddl-auto: update` 에 의존한다. 컬럼 추가는 nullable 로 시작하고, 이름 변경/삭제는 Supabase 콘솔에서 수동 마이그레이션이 필요하므로 반드시 사용자에게 알린다.
-- **프론트**: 스타일링은 Tailwind CSS v4(`@tailwindcss/vite` 플러그인, `src/index.css` 의 `@theme` 블록에 `brand` 색상/폰트 토큰 정의)로 전면 전환했다. 클래스 기반 CSS 파일(`theme.css`)은 삭제됨 — 새 UI는 전부 Tailwind 유틸리티 클래스로 작성한다. 반복되는 패턴(통계 카드, 상태 배지, 패널, 버튼, 입력 필드)은 `src/components/dashboard.tsx` 의 공용 컴포넌트를 재사용한다. 아이콘은 `lucide-react`. 다크 "운영 콘솔" 톤(슬레이트 배경 + 인디고 액센트 + 에메랄드/앰버/로즈 상태색)으로 통일했으니 새 화면도 이 톤을 따른다. 상태는 컴포넌트 로컬 `useState`, 전역 상태 라이브러리 없음. 관리자 인증 토큰은 `sessionStorage` 의 `admin_auth`.
+- **프론트**: 스타일링은 Tailwind CSS v4(`@tailwindcss/vite` 플러그인, `src/index.css` 의 `@theme` 블록에 `brand` 색상/폰트 토큰 정의)로 전면 전환했다. 클래스 기반 CSS 파일(`theme.css`)은 삭제됨 — 새 UI는 전부 Tailwind 유틸리티 클래스로 작성한다. 반복되는 패턴(통계 카드, 상태 배지, 패널, 버튼, 입력 필드)은 `src/components/dashboard.tsx` 의 공용 컴포넌트를 재사용한다. 아이콘은 `lucide-react`. 다크 "가을" 톤(`index.css`에서 기본 `slate` 팔레트를 스톤 계열 따뜻한 색으로 오버라이드 + 호박/단풍색 `brand` 액센트 + 에메랄드/앰버/로즈 상태색)으로 통일했으니 새 화면도 이 톤을 따른다. 배경에 라디얼 그라데이션을 쓸 때는 `#3c1408`(brand-950) → `#0c0a09`(slate-950) 조합을 그대로 재사용한다. 상태는 컴포넌트 로컬 `useState`, 전역 상태 라이브러리 없음. 관리자 인증 토큰은 `sessionStorage` 의 `admin_auth`.
 - **비밀값**: 루트 `.env`, `frontend-admin/.env`, `mobile-app/.env` 는 절대 읽거나 커밋하지 않는다(훅이 차단). 예시는 `.env.example` 에만 추가한다. `SecurityConfig` 의 `admin1234` 는 개발용 기본값이며, 운영 값은 환경변수로 뺀다.
 
 ## 작업 완료 기준 (Definition of Done)

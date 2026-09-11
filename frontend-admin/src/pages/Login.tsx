@@ -25,7 +25,7 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 bg-[radial-gradient(circle_at_30%_20%,#1e1b4b,#020617_55%)] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-slate-950 bg-[radial-gradient(circle_at_30%_20%,#3c1408,#0c0a09_55%)] px-4">
       <form
         onSubmit={handleSubmit}
         className="flex w-full max-w-sm flex-col gap-3.5 rounded-2xl border border-white/10 bg-slate-900/80 p-8 shadow-2xl shadow-black/50 backdrop-blur"
