@@ -52,7 +52,7 @@ cd mobile-app; npm install; npm run typecheck
 2. **QR 1회용** — `QrService.validateAndInvalidate` 가 조회·만료검사·`usedAt` 설정을 한 트랜잭션에서 처리. 재사용/만료/미존재는 모두 `false`. 이 메서드를 우회해 출퇴근을 기록하는 코드를 만들지 말 것.
 3. **기기 승인** — `Device.status` PENDING → APPROVED → REVOKED. 출퇴근 API는 `APPROVED` 기기만 통과(`AttendanceService.validateDevice`: 미등록 401, 미승인 403).
 4. **최초 등록 = 작업자 자가 생성** — `POST /api/devices/register` 는 사번(`^S\d{5}$`)이 없으면 이름과 함께 `Worker` 를 생성한다. 같은 사번에 PENDING/APPROVED 기기가 있으면 409.
-5. **출근은 하루 1회** — `hasCheckedInToday` 로 중복 출근 409. 퇴근은 제한 없음.
+5. **출퇴근은 각각 하루 1회** — `hasCheckedInToday`/`hasCheckedOutToday` 로 중복 출근·퇴근 모두 409. 모바일 체크인 화면은 당일 처리 완료된 항목의 버튼을 숨긴다.
 6. **관리자 인증** — HTTP Basic, `SecurityConfig` 의 인메모리 `admin` 계정(운영 전 DB 기반으로 교체 예정 TODO). `/api/admin/**` 만 `ROLE_ADMIN`, 나머지 `/api/**` 는 permitAll 이고 기기ID/IP로 방어.
 7. **시간대** — 서버는 `Asia/Seoul` 고정(Dockerfile `-Duser.timezone`). 날짜 경계 계산(`LocalDate.now()`)은 이 전제를 따른다.
 

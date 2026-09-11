@@ -22,12 +22,11 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
- * 출퇴근 처리의 방어 로직(미등록/미승인 기기 차단, QR 재검증, 중복 출근 방지)을 고정한다.
+ * 출퇴근 처리의 방어 로직(미등록/미승인 기기 차단, QR 재검증, 중복 출근·퇴근 방지)을 고정한다.
  */
 @ExtendWith(MockitoExtension.class)
 class AttendanceServiceTest {
@@ -139,19 +138,32 @@ class AttendanceServiceTest {
     }
 
     @Test
-    void checkOut_같은_날_여러_번_허용된다() {
+    void checkOut_오늘_처음이면_CHECK_OUT_로그가_저장된다() {
         when(deviceRepository.findByHardwareId("hw-1")).thenReturn(Optional.of(approvedDevice));
         when(qrService.validateAndInvalidate("qr-token")).thenReturn(true);
+        when(attendanceLogRepository.existsByWorkerIdAndTypeAndCheckedAtBetween(
+                eq(1L), eq(AttendanceType.CHECK_OUT), any(), any())).thenReturn(false);
         when(attendanceLogRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         attendanceService.checkOut(dto);
 
-        // 퇴근은 hasCheckedInToday 같은 중복 방지 조회를 거치지 않아야 한다
-        verify(attendanceLogRepository, never()).existsByWorkerIdAndTypeAndCheckedAtBetween(
-                anyLong(), any(), any(), any());
         ArgumentCaptor<AttendanceLog> captor = ArgumentCaptor.forClass(AttendanceLog.class);
         verify(attendanceLogRepository).save(captor.capture());
         assertThat(captor.getValue().getType()).isEqualTo(AttendanceType.CHECK_OUT);
+    }
+
+    @Test
+    void checkOut_오늘_이미_퇴근했으면_409() {
+        when(deviceRepository.findByHardwareId("hw-1")).thenReturn(Optional.of(approvedDevice));
+        when(qrService.validateAndInvalidate("qr-token")).thenReturn(true);
+        when(attendanceLogRepository.existsByWorkerIdAndTypeAndCheckedAtBetween(
+                eq(1L), eq(AttendanceType.CHECK_OUT), any(), any())).thenReturn(true);
+
+        assertThatThrownBy(() -> attendanceService.checkOut(dto))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("409");
+
+        verify(attendanceLogRepository, never()).save(any());
     }
 
     @Test

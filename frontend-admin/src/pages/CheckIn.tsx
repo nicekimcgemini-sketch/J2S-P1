@@ -295,10 +295,12 @@ export default function CheckIn() {
               <Button variant="ok" size="lg" onClick={() => runCheck('CHECK_IN')} className="w-full">
                 <LogIn className="h-4 w-4" /> {urlToken ? '출근 처리' : '출근 QR 스캔'}
               </Button>
-            ) : (
+            ) : !checkOutAt ? (
               <Button variant="crit" size="lg" onClick={() => runCheck('CHECK_OUT')} className="w-full">
                 <LogOut className="h-4 w-4" /> {urlToken ? '퇴근 처리' : '퇴근 QR 스캔'}
               </Button>
+            ) : (
+              <StatusPill tone="ok">오늘 퇴근 처리가 완료됐어요</StatusPill>
             )}
           </div>
         </>

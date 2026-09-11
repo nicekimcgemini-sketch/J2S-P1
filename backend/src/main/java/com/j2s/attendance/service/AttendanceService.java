@@ -64,6 +64,12 @@ public class AttendanceService {
         }
 
         Worker worker = device.getWorker();
+
+        // 출근과 동일하게 하루 1회로 제한 (중복 방지)
+        if (hasCheckedOutToday(worker.getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 오늘 퇴근 처리가 완료되었습니다.");
+        }
+
         AttendanceLog log = AttendanceLog.builder()
                 .worker(worker)
                 .device(device)
@@ -93,7 +99,15 @@ public class AttendanceService {
                 workerId, AttendanceType.CHECK_IN, todayStart, todayEnd);
     }
 
-    /** 모바일 체크인 화면에 당일 출근/퇴근 시각을 표시하기 위한 조회. 퇴근은 여러 번 정정될 수 있어 가장 최근 기록을 쓴다. */
+    @Transactional(readOnly = true)
+    public boolean hasCheckedOutToday(Long workerId) {
+        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+        LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
+        return attendanceLogRepository.existsByWorkerIdAndTypeAndCheckedAtBetween(
+                workerId, AttendanceType.CHECK_OUT, todayStart, todayEnd);
+    }
+
+    /** 모바일 체크인 화면에 당일 출근/퇴근 시각을 표시하기 위한 조회. */
     @Transactional(readOnly = true)
     public TodayAttendanceDto getTodayAttendance(Long workerId) {
         LocalDateTime todayStart = LocalDate.now().atStartOfDay();
