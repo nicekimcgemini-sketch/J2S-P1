@@ -103,4 +103,46 @@ class QrServiceTest {
         assertThat(result).isFalse();
         verify(qrTokenRepository, never()).save(any());
     }
+
+    @Test
+    void isStillActive_미사용_미만료_토큰은_true() {
+        QrToken token = QrToken.builder()
+                .token("valid-token")
+                .expiresAt(LocalDateTime.now().plusSeconds(30))
+                .build();
+        when(qrTokenRepository.findByToken("valid-token")).thenReturn(Optional.of(token));
+
+        assertThat(qrService.isStillActive("valid-token")).isTrue();
+        verify(qrTokenRepository, never()).save(any());
+    }
+
+    @Test
+    void isStillActive_이미_사용된_토큰은_false() {
+        QrToken token = QrToken.builder()
+                .token("used-token")
+                .expiresAt(LocalDateTime.now().plusSeconds(30))
+                .usedAt(LocalDateTime.now().minusSeconds(5))
+                .build();
+        when(qrTokenRepository.findByToken("used-token")).thenReturn(Optional.of(token));
+
+        assertThat(qrService.isStillActive("used-token")).isFalse();
+    }
+
+    @Test
+    void isStillActive_만료된_토큰은_false() {
+        QrToken token = QrToken.builder()
+                .token("expired-token")
+                .expiresAt(LocalDateTime.now().minusSeconds(1))
+                .build();
+        when(qrTokenRepository.findByToken("expired-token")).thenReturn(Optional.of(token));
+
+        assertThat(qrService.isStillActive("expired-token")).isFalse();
+    }
+
+    @Test
+    void isStillActive_존재하지_않는_토큰은_false() {
+        when(qrTokenRepository.findByToken("unknown")).thenReturn(Optional.empty());
+
+        assertThat(qrService.isStillActive("unknown")).isFalse();
+    }
 }

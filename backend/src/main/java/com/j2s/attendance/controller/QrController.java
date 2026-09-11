@@ -22,4 +22,13 @@ public class QrController {
     public ResponseEntity<QrResponseDto> generate() {
         return ResponseEntity.ok(qrService.generateQrToken());
     }
+
+    // 현재 화면에 떠 있는 QR이 아직 유효한지(미사용·미만료) 확인. 현장 PC가 짧은 주기로 폴링해서
+    // 누군가 방금 사용했으면 곧바로 새 QR을 발급받는 데 쓴다.
+    @GetMapping("/status")
+    public ResponseEntity<QrStatusResponse> status(@RequestParam String token) {
+        return ResponseEntity.ok(new QrStatusResponse(qrService.isStillActive(token)));
+    }
+
+    public record QrStatusResponse(boolean active) {}
 }

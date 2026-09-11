@@ -51,7 +51,7 @@ function DoneIllustration() {
   );
 }
 
-const QR_REFRESH_INTERVAL = 55_000; // 55초마다 자동 갱신 (만료 5초 전)
+const QR_STATUS_POLL_INTERVAL = 2_000; // 2초마다 현재 QR이 아직 살아있는지 확인
 
 // 체크인 페이지 주소에 토큰을 실어 보낸다 — 등록 여부와 상관없이
 // 폰 기본 카메라로 이 QR 하나만 찍으면 된다 (별도의 "등록용 QR"이 없다).
@@ -80,12 +80,24 @@ export default function QrScreen() {
     }
   }, []);
 
-  // 최초 로드 및 자동 갱신
+  // 최초 1회 발급
+  useEffect(() => { fetchQr(); }, [fetchQr]);
+
+  // 누군가 방금 이 QR로 출퇴근을 처리했는지(또는 만료됐는지) 짧은 주기로 확인하고,
+  // 더 이상 유효하지 않으면 다음 사람을 위해 곧바로 새 QR을 받아온다.
   useEffect(() => {
-    fetchQr();
-    const interval = setInterval(fetchQr, QR_REFRESH_INTERVAL);
-    return () => clearInterval(interval);
-  }, [fetchQr]);
+    if (!token) return;
+    const currentToken = token;
+    const poll = setInterval(async () => {
+      try {
+        const { active } = await qrApi.status(currentToken);
+        if (!active) fetchQr();
+      } catch {
+        // 네트워크 오류는 다음 폴링에서 다시 시도
+      }
+    }, QR_STATUS_POLL_INTERVAL);
+    return () => clearInterval(poll);
+  }, [token, fetchQr]);
 
   // 남은 시간 카운트다운
   useEffect(() => {
@@ -174,7 +186,7 @@ export default function QrScreen() {
         </div>
 
         <p className="border-t border-white/5 pt-3 text-center text-[11.5px] text-slate-500">
-          QR은 60초마다 새로 바뀝니다. 항상 화면에 떠 있는 QR을 다시 찍어주세요.
+          QR은 한 번 쓰이면 곧바로(최대 2초 내) 새로 바뀝니다. 항상 화면에 떠 있는 QR을 다시 찍어주세요.
         </p>
       </div>
     </div>

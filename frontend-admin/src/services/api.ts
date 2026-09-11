@@ -105,4 +105,6 @@ export const ipWhitelistApi = {
 
 export const qrApi = {
   generate: () => api.get<{ token: string; expiresAt: string; expiresInSeconds: number }>('/qr/generate').then(r => r.data),
+  status: (token: string) =>
+    api.get<{ active: boolean }>('/qr/status', { params: { token } }).then(r => r.data),
 };

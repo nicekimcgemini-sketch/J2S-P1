@@ -63,6 +63,18 @@ public class QrService {
         });
     }
 
+    /**
+     * 화면에 떠 있는 QR이 아직 살아있는지(미사용·미만료) 확인용.
+     * validateAndInvalidate 와 달리 상태를 바꾸지 않는다 — 현장 PC가 짧은 주기로 폴링해서
+     * 누군가 방금 이 QR로 출퇴근을 처리했으면 곧바로 새 QR로 갈아끼우는 데 쓴다.
+     */
+    @Transactional(readOnly = true)
+    public boolean isStillActive(String token) {
+        return qrTokenRepository.findByToken(token)
+                .map(qr -> !qr.isUsed() && !qr.isExpired())
+                .orElse(false);
+    }
+
     // 만료된 토큰 주기적 정리 (10분마다)
     @Scheduled(fixedDelay = 600_000)
     @Transactional

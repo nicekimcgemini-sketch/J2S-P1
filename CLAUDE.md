@@ -48,7 +48,7 @@ cd mobile-app; npm install; npm run typecheck
 
 ## 도메인 흐름 (변경 시 반드시 유지할 불변식)
 
-1. **QR 발급** `GET /api/qr/generate` — `IpWhitelistFilter` 가 `/api/qr/**` 를 화이트리스트 IP(`ip_whitelist` 테이블)로 제한. 토큰은 UUID, 유효 `app.qr.expiry-seconds`(60s). 화면(`QrScreen.tsx`)에는 토큰을 그대로 노출하지 않고 `/checkin?t=<token>` 주소로 인코딩한 QR 하나만 보여준다 — 등록/미등록 여부와 상관없이 이 QR 하나만 스캔하면 되고, `CheckIn.tsx`가 `t` 쿼리파라미터 유무로 "바로 처리" 와 "페이지 내 카메라로 재스캔"(북마크 등으로 토큰 없이 들어온 경우의 대체 경로) 을 자동 분기한다. QR 두 개(체크인용/등록용)를 따로 보여주는 옛 방식으로 되돌리지 말 것 — 사용자 혼동 문제로 의도적으로 통합함. 모바일 웹의 기기 ID(`frontend-admin/src/services/deviceId.ts`)는 카메라 앱이 링크를 임시 인앱 브라우저로 열어 매번 저장공간이 초기화되는 경우를 대비해 `localStorage`+쿠키(5년) 이중 저장으로 동기화한다 — 완전한 프라이빗 모드까지는 못 막지만 가장 흔한 원인은 방어한다.
+1. **QR 발급** `GET /api/qr/generate` — `IpWhitelistFilter` 가 `/api/qr/**` 를 화이트리스트 IP(`ip_whitelist` 테이블)로 제한. 토큰은 UUID, 유효 `app.qr.expiry-seconds`(60s). 화면(`QrScreen.tsx`)에는 토큰을 그대로 노출하지 않고 `/checkin?t=<token>` 주소로 인코딩한 QR 하나만 보여준다 — 등록/미등록 여부와 상관없이 이 QR 하나만 스캔하면 되고, `CheckIn.tsx`가 `t` 쿼리파라미터 유무로 "바로 처리" 와 "페이지 내 카메라로 재스캔"(북마크 등으로 토큰 없이 들어온 경우의 대체 경로) 을 자동 분기한다. QR 두 개(체크인용/등록용)를 따로 보여주는 옛 방식으로 되돌리지 말 것 — 사용자 혼동 문제로 의도적으로 통합함. `QrScreen.tsx`는 고정 주기 대신 2초마다 `/api/qr/status`로 현재 QR의 사용/만료 여부를 폴링하다가, 누군가 방금 그 QR로 출퇴근을 처리했으면 곧바로 새 QR을 받아온다(최대 60초까지 기다리게 하지 않기 위함). 모바일 웹의 기기 ID(`frontend-admin/src/services/deviceId.ts`)는 카메라 앱이 링크를 임시 인앱 브라우저로 열어 매번 저장공간이 초기화되는 경우를 대비해 `localStorage`+쿠키(5년) 이중 저장으로 동기화한다 — 완전한 프라이빗 모드까지는 못 막지만 가장 흔한 원인은 방어한다.
 2. **QR 1회용** — `QrService.validateAndInvalidate` 가 조회·만료검사·`usedAt` 설정을 한 트랜잭션에서 처리. 재사용/만료/미존재는 모두 `false`. 이 메서드를 우회해 출퇴근을 기록하는 코드를 만들지 말 것.
 3. **기기 승인** — `Device.status` PENDING → APPROVED → REVOKED. 출퇴근 API는 `APPROVED` 기기만 통과(`AttendanceService.validateDevice`: 미등록 401, 미승인 403).
 4. **최초 등록 = 작업자 자가 생성** — `POST /api/devices/register` 는 사번(`^S\d{5}$`)이 없으면 이름과 함께 `Worker` 를 생성한다. 같은 사번에 PENDING/APPROVED 기기가 있으면 409.
@@ -61,6 +61,7 @@ cd mobile-app; npm install; npm run typecheck
 | 메서드/경로 | 인증 | 비고 |
 |---|---|---|
 | `GET /api/qr/generate` | IP 화이트리스트 | `{token, expiresAt, expiresInSeconds}` |
+| `GET /api/qr/status?token=` | IP 화이트리스트 | `{active}` — 미사용·미만료 여부, 상태를 바꾸지 않는 조회 전용 |
 | `POST /api/devices/register` | 없음 | 201, `DeviceRegisterDto` 검증 |
 | `GET /api/devices/status?hardwareId=` | 없음 | `{status, workerName, checkedInToday, checkInAt, checkOutAt}` / `NOT_REGISTERED` — `checkInAt`/`checkOutAt`은 당일 최신 기록, 없으면 `null` |
 | `POST /api/attendance/check-in`, `check-out` | 없음(기기ID 검증) | `{qrToken, hardwareId}` |
