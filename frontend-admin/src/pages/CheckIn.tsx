@@ -19,6 +19,10 @@ function isLikelyMobile(): boolean {
   return uaMatch && hasTouch && coarsePointer;
 }
 
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' });
+}
+
 const deviceId = getOrCreateDeviceId();
 
 export default function CheckIn() {
@@ -26,6 +30,8 @@ export default function CheckIn() {
   const [stage, setStage] = useState<Stage>('loading');
   const [workerName, setWorkerName] = useState<string | null>(null);
   const [checkedInToday, setCheckedInToday] = useState(false);
+  const [checkInAt, setCheckInAt] = useState<string | null>(null);
+  const [checkOutAt, setCheckOutAt] = useState<string | null>(null);
   const [employeeNo, setEmployeeNo] = useState('');
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
@@ -55,6 +61,8 @@ export default function CheckIn() {
     const res = await deviceApi.getStatus(deviceId);
     setWorkerName(res.workerName);
     setCheckedInToday(res.checkedInToday);
+    setCheckInAt(res.checkInAt);
+    setCheckOutAt(res.checkOutAt);
     if (res.status === 'NOT_REGISTERED') setStage('not_registered');
     else if (res.status === 'PENDING') setStage('pending');
     else if (res.status === 'REVOKED') setStage('revoked');
@@ -141,10 +149,10 @@ export default function CheckIn() {
     try {
       if (activeMode === 'CHECK_IN') {
         await attendanceApi.checkIn(deviceId, token);
-        setCheckedInToday(true);
       } else {
         await attendanceApi.checkOut(deviceId, token);
       }
+      await refreshStatus(); // 당일 출퇴근 시각을 최신 상태로 반영
       setMessage(activeMode === 'CHECK_IN' ? '출근 처리되었습니다.' : '퇴근 처리되었습니다.');
       setError('');
     } catch (err: any) {
@@ -261,26 +269,37 @@ export default function CheckIn() {
         <>
           {message && <StatusPill tone="ok">{message}</StatusPill>}
           {error && <AlertBanner>{error}</AlertBanner>}
-          {checkedInToday && !message && (
-            <p className="text-[13px] leading-relaxed text-slate-400">오늘 출근 처리가 이미 완료되었습니다.</p>
-          )}
           {urlToken && !message && !error && (
             <p className="text-[13px] leading-relaxed text-slate-400">QR 인식 완료. 아래에서 선택하세요.</p>
           )}
 
+          {(checkInAt || checkOutAt) && (
+            <div className="flex w-full flex-col gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+              {checkInAt && (
+                <div className="flex items-center justify-between text-[13px]">
+                  <span className="text-slate-500">출근</span>
+                  <span className="font-mono tabular text-sm font-semibold text-emerald-400">{formatTime(checkInAt)}</span>
+                </div>
+              )}
+              {checkOutAt && (
+                <div className="flex items-center justify-between text-[13px]">
+                  <span className="text-slate-500">퇴근</span>
+                  <span className="font-mono tabular text-sm font-semibold text-rose-400">{formatTime(checkOutAt)}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex w-full flex-col gap-2.5">
-            <Button
-              variant="ok"
-              size="lg"
-              onClick={() => runCheck('CHECK_IN')}
-              disabled={checkedInToday}
-              className="w-full"
-            >
-              <LogIn className="h-4 w-4" /> {urlToken ? '출근 처리' : '출근 QR 스캔'}
-            </Button>
-            <Button variant="crit" size="lg" onClick={() => runCheck('CHECK_OUT')} className="w-full">
-              <LogOut className="h-4 w-4" /> {urlToken ? '퇴근 처리' : '퇴근 QR 스캔'}
-            </Button>
+            {!checkedInToday ? (
+              <Button variant="ok" size="lg" onClick={() => runCheck('CHECK_IN')} className="w-full">
+                <LogIn className="h-4 w-4" /> {urlToken ? '출근 처리' : '출근 QR 스캔'}
+              </Button>
+            ) : (
+              <Button variant="crit" size="lg" onClick={() => runCheck('CHECK_OUT')} className="w-full">
+                <LogOut className="h-4 w-4" /> {urlToken ? '퇴근 처리' : '퇴근 QR 스캔'}
+              </Button>
+            )}
           </div>
         </>
       )}

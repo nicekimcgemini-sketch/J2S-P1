@@ -62,7 +62,7 @@ cd mobile-app; npm install; npm run typecheck
 |---|---|---|
 | `GET /api/qr/generate` | IP 화이트리스트 | `{token, expiresAt, expiresInSeconds}` |
 | `POST /api/devices/register` | 없음 | 201, `DeviceRegisterDto` 검증 |
-| `GET /api/devices/status?hardwareId=` | 없음 | `{status, workerName, checkedInToday}` / `NOT_REGISTERED` |
+| `GET /api/devices/status?hardwareId=` | 없음 | `{status, workerName, checkedInToday, checkInAt, checkOutAt}` / `NOT_REGISTERED` — `checkInAt`/`checkOutAt`은 당일 최신 기록, 없으면 `null` |
 | `POST /api/attendance/check-in`, `check-out` | 없음(기기ID 검증) | `{qrToken, hardwareId}` |
 | `GET /api/admin/me` | ADMIN | 로그인 확인 |
 | `GET /api/admin/devices`, `/devices/pending` | ADMIN | |

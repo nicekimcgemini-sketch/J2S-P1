@@ -61,6 +61,8 @@ export interface DeviceStatusResponse {
   status: 'NOT_REGISTERED' | 'PENDING' | 'APPROVED' | 'REVOKED';
   workerName: string | null;
   checkedInToday: boolean;
+  checkInAt: string | null;
+  checkOutAt: string | null;
 }
 
 export const deviceApi = {

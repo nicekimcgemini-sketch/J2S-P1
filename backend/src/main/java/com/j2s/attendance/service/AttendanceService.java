@@ -2,6 +2,7 @@ package com.j2s.attendance.service;
 
 import com.j2s.attendance.dto.AttendanceLogDto;
 import com.j2s.attendance.dto.AttendanceRequestDto;
+import com.j2s.attendance.dto.TodayAttendanceDto;
 import com.j2s.attendance.entity.*;
 import com.j2s.attendance.repository.AttendanceLogRepository;
 import com.j2s.attendance.repository.DeviceRepository;
@@ -90,6 +91,26 @@ public class AttendanceService {
         LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
         return attendanceLogRepository.existsByWorkerIdAndTypeAndCheckedAtBetween(
                 workerId, AttendanceType.CHECK_IN, todayStart, todayEnd);
+    }
+
+    /** 모바일 체크인 화면에 당일 출근/퇴근 시각을 표시하기 위한 조회. 퇴근은 여러 번 정정될 수 있어 가장 최근 기록을 쓴다. */
+    @Transactional(readOnly = true)
+    public TodayAttendanceDto getTodayAttendance(Long workerId) {
+        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+        LocalDateTime todayEnd = LocalDate.now().atTime(LocalTime.MAX);
+
+        LocalDateTime checkInAt = attendanceLogRepository
+                .findFirstByWorkerIdAndTypeAndCheckedAtBetweenOrderByCheckedAtDesc(
+                        workerId, AttendanceType.CHECK_IN, todayStart, todayEnd)
+                .map(AttendanceLog::getCheckedAt)
+                .orElse(null);
+        LocalDateTime checkOutAt = attendanceLogRepository
+                .findFirstByWorkerIdAndTypeAndCheckedAtBetweenOrderByCheckedAtDesc(
+                        workerId, AttendanceType.CHECK_OUT, todayStart, todayEnd)
+                .map(AttendanceLog::getCheckedAt)
+                .orElse(null);
+
+        return new TodayAttendanceDto(checkInAt != null, checkInAt, checkOutAt);
     }
 
     private Device validateDevice(String hardwareId) {

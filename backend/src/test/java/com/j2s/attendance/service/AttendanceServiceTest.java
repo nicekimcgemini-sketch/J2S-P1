@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -151,5 +152,53 @@ class AttendanceServiceTest {
         ArgumentCaptor<AttendanceLog> captor = ArgumentCaptor.forClass(AttendanceLog.class);
         verify(attendanceLogRepository).save(captor.capture());
         assertThat(captor.getValue().getType()).isEqualTo(AttendanceType.CHECK_OUT);
+    }
+
+    @Test
+    void getTodayAttendance_기록이_없으면_모두_null이고_checkedIn은_false() {
+        when(attendanceLogRepository.findFirstByWorkerIdAndTypeAndCheckedAtBetweenOrderByCheckedAtDesc(
+                eq(1L), any(), any(), any())).thenReturn(Optional.empty());
+
+        var result = attendanceService.getTodayAttendance(1L);
+
+        assertThat(result.checkedIn()).isFalse();
+        assertThat(result.checkInAt()).isNull();
+        assertThat(result.checkOutAt()).isNull();
+    }
+
+    @Test
+    void getTodayAttendance_출근만_했으면_checkInAt만_채워진다() {
+        LocalDateTime checkInTime = LocalDateTime.now().minusHours(2);
+        AttendanceLog checkInLog = AttendanceLog.builder().type(AttendanceType.CHECK_IN).checkedAt(checkInTime).build();
+
+        when(attendanceLogRepository.findFirstByWorkerIdAndTypeAndCheckedAtBetweenOrderByCheckedAtDesc(
+                eq(1L), eq(AttendanceType.CHECK_IN), any(), any())).thenReturn(Optional.of(checkInLog));
+        when(attendanceLogRepository.findFirstByWorkerIdAndTypeAndCheckedAtBetweenOrderByCheckedAtDesc(
+                eq(1L), eq(AttendanceType.CHECK_OUT), any(), any())).thenReturn(Optional.empty());
+
+        var result = attendanceService.getTodayAttendance(1L);
+
+        assertThat(result.checkedIn()).isTrue();
+        assertThat(result.checkInAt()).isEqualTo(checkInTime);
+        assertThat(result.checkOutAt()).isNull();
+    }
+
+    @Test
+    void getTodayAttendance_출근_퇴근_모두_했으면_가장_최근_퇴근시각을_반환한다() {
+        LocalDateTime checkInTime = LocalDateTime.now().minusHours(8);
+        LocalDateTime latestCheckOut = LocalDateTime.now().minusMinutes(5);
+        AttendanceLog checkInLog = AttendanceLog.builder().type(AttendanceType.CHECK_IN).checkedAt(checkInTime).build();
+        AttendanceLog checkOutLog = AttendanceLog.builder().type(AttendanceType.CHECK_OUT).checkedAt(latestCheckOut).build();
+
+        when(attendanceLogRepository.findFirstByWorkerIdAndTypeAndCheckedAtBetweenOrderByCheckedAtDesc(
+                eq(1L), eq(AttendanceType.CHECK_IN), any(), any())).thenReturn(Optional.of(checkInLog));
+        when(attendanceLogRepository.findFirstByWorkerIdAndTypeAndCheckedAtBetweenOrderByCheckedAtDesc(
+                eq(1L), eq(AttendanceType.CHECK_OUT), any(), any())).thenReturn(Optional.of(checkOutLog));
+
+        var result = attendanceService.getTodayAttendance(1L);
+
+        assertThat(result.checkedIn()).isTrue();
+        assertThat(result.checkInAt()).isEqualTo(checkInTime);
+        assertThat(result.checkOutAt()).isEqualTo(latestCheckOut);
     }
 }
