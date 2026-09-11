@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Activity, LogIn } from 'lucide-react';
 import { authApi } from '../services/api';
 import { AlertBanner, Button, inputClass } from '../components/dashboard';
+import { AutumnLeaves } from '../components/decor';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -25,7 +26,8 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-100 px-4">
+      <AutumnLeaves />
       <form
         onSubmit={handleSubmit}
         className="flex w-full max-w-sm flex-col gap-3.5 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm shadow-slate-900/5"

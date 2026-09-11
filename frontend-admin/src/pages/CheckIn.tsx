@@ -4,6 +4,7 @@ import { LogIn, LogOut, X } from 'lucide-react';
 import { deviceApi, attendanceApi } from '../services/api';
 import { getOrCreateDeviceId } from '../services/deviceId';
 import { AlertBanner, Button, StatusPill, inputClassLg } from '../components/dashboard';
+import { AutumnLeaves } from '../components/decor';
 
 type Stage = 'loading' | 'not_registered' | 'registering' | 'pending' | 'revoked' | 'ready' | 'scanning';
 
@@ -365,7 +366,8 @@ export default function CheckIn() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-6 py-10">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-100 px-6 py-10">
+      <AutumnLeaves />
       <div className="flex w-full max-w-sm flex-col items-center gap-4 rounded-3xl border border-slate-200 bg-white p-7 text-center shadow-sm shadow-slate-900/5">
         {children}
       </div>

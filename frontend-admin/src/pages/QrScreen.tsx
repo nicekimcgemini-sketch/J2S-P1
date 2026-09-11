@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Activity, RefreshCw } from 'lucide-react';
 import { qrApi } from '../services/api';
+import { AutumnLeaves } from '../components/decor';
 
 const QR_STATUS_POLL_INTERVAL = 2_000; // 2초마다 현재 QR이 아직 살아있는지 확인
 
@@ -67,7 +68,15 @@ export default function QrScreen() {
   const low = remaining < 15;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-slate-100 px-4 py-10">
+    <div className="relative flex min-h-screen flex-col items-center justify-center gap-8 overflow-hidden bg-slate-100 px-4 py-10">
+      <AutumnLeaves
+        leaves={[
+          { top: '-4%', right: '-3%', size: 190, rotate: 14, color: 'text-brand-300', opacity: 0.5 },
+          { top: '10%', left: '6%', size: 54, rotate: -20, color: 'text-amber-300', opacity: 0.55 },
+          { bottom: '-5%', left: '-4%', size: 170, rotate: -12, color: 'text-brand-400', opacity: 0.45 },
+          { bottom: '16%', right: '8%', size: 50, rotate: 28, color: 'text-rose-300', opacity: 0.5 },
+        ]}
+      />
       <div className="flex items-center gap-2 text-[13px] font-medium text-slate-500">
         <Activity className="h-4 w-4 text-brand-600" strokeWidth={2} />
         출퇴근 QR 코드
