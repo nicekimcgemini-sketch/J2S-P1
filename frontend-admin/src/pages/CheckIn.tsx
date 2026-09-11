@@ -294,7 +294,7 @@ export default function CheckIn() {
           )}
 
           {(checkInAt || checkOutAt) && (
-            <div className="flex w-full flex-col gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+            <div className="flex w-full flex-col gap-1.5 border border-slate-800 px-4 py-3">
               {checkInAt && (
                 <div className="flex items-center justify-between text-[13px]">
                   <span className="text-slate-500">출근</span>
@@ -344,8 +344,8 @@ export default function CheckIn() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 bg-[radial-gradient(circle_at_30%_20%,#3c1408,#0c0a09_55%)] px-6 py-10">
-      <div className="flex w-full max-w-sm flex-col items-center gap-3.5 rounded-2xl border border-white/10 bg-slate-900/80 p-7 text-center shadow-2xl shadow-black/50 backdrop-blur">
+    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-6 py-10">
+      <div className="flex w-full max-w-sm flex-col items-center gap-3.5 border border-slate-800 border-t-2 border-t-brand-500 bg-slate-900 p-7 text-center">
         {children}
       </div>
     </div>

@@ -25,16 +25,16 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 bg-[radial-gradient(circle_at_30%_20%,#3c1408,#0c0a09_55%)] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
       <form
         onSubmit={handleSubmit}
-        className="flex w-full max-w-sm flex-col gap-3.5 rounded-2xl border border-white/10 bg-slate-900/80 p-8 shadow-2xl shadow-black/50 backdrop-blur"
+        className="flex w-full max-w-sm flex-col gap-3.5 border border-slate-800 border-t-2 border-t-brand-500 bg-slate-900 p-8"
       >
-        <div className="mb-1 flex items-center gap-2 text-[15px] font-bold text-white">
-          <Activity className="h-5 w-5 text-brand-400" strokeWidth={2.25} />
+        <div className="mb-1 flex items-center gap-2 text-[13px] font-medium text-slate-400">
+          <Activity className="h-4 w-4 text-brand-400" strokeWidth={2} />
           출퇴근 모니터링
         </div>
-        <h2 className="mb-1 text-lg font-semibold text-white">관리자 로그인</h2>
+        <h2 className="mb-1 font-display text-xl font-semibold text-white">관리자 로그인</h2>
 
         <input
           className={inputClass}

@@ -94,16 +94,16 @@ export default function DeviceManagement() {
 
       {error && <AlertBanner>{error}</AlertBanner>}
 
-      <div className="overflow-hidden rounded-xl border border-white/5 bg-slate-900/60">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 px-4 py-3">
+      <div className="overflow-hidden border border-slate-800 bg-slate-900">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-4 py-3">
           <div className="flex gap-1.5">
             {(['PENDING', 'ALL'] as const).map(f => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
                 className={[
-                  'rounded-lg px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors',
-                  filter === f ? 'bg-brand-600 text-white' : 'border border-white/10 text-slate-400 hover:text-white',
+                  'px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors',
+                  filter === f ? 'bg-brand-600 text-white' : 'border border-slate-700 text-slate-400 hover:text-white',
                 ].join(' ')}
               >
                 {f === 'PENDING' ? '승인 대기' : '전체'}
@@ -133,7 +133,7 @@ export default function DeviceManagement() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-[13px]">
               <thead>
-                <tr className="border-b border-white/5 bg-white/[0.02] text-left text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                <tr className="border-b border-slate-800 bg-black/20 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   <th className="whitespace-nowrap px-3.5 py-2.5">
                     <input
                       type="checkbox"
@@ -154,7 +154,7 @@ export default function DeviceManagement() {
               </thead>
               <tbody>
                 {devices.map(d => (
-                  <tr key={d.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.03]">
+                  <tr key={d.id} className="border-b border-slate-800 last:border-0 hover:bg-slate-800/40">
                     <td className="px-3.5 py-2.5">
                       <input
                         type="checkbox"

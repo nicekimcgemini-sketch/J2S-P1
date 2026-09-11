@@ -1,8 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  /* 큰 제목 전용 — 본문은 계속 sans. 화면 전체가 같은 서체 굵기 하나로만 위계를 표현하지
+     않도록, 제목만 세리프로 갈라서 "생성된 대시보드" 특유의 밋밋함을 피한다. */
+  --font-display: 'Noto Serif KR', 'Pretendard Variable', serif;
 
   /* 브랜드 액센트 (가을 단풍/호박 톤) — 로그인/사이드바 활성 상태/기본 버튼에 사용 */
   --color-brand-50: #fef6ee;

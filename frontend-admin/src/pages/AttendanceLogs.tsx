@@ -112,7 +112,7 @@ export default function AttendanceLogs() {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-[13px]">
               <thead>
-                <tr className="border-b border-white/5 bg-white/[0.02] text-left text-[11px] font-bold uppercase tracking-wide text-slate-500">
+                <tr className="border-b border-slate-800 bg-black/20 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                   <th className="whitespace-nowrap px-3.5 py-2.5">
                     <input
                       type="checkbox"
@@ -130,7 +130,7 @@ export default function AttendanceLogs() {
               </thead>
               <tbody>
                 {logs.map(l => (
-                  <tr key={l.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.03]">
+                  <tr key={l.id} className="border-b border-slate-800 last:border-0 hover:bg-slate-800/40">
                     <td className="px-3.5 py-2.5">
                       <input
                         type="checkbox"
