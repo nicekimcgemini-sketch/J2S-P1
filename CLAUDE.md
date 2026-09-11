@@ -85,7 +85,7 @@ cd mobile-app; npm install; npm run typecheck
 1. `.\scripts\check.ps1` 전부 통과 (수정한 모듈에 맞춰 `-Backend` 등으로 좁혀도 되지만 커밋 전엔 전체).
 2. 백엔드 로직 변경 시 `backend/src/test` 에 대응 테스트 추가/수정. 서비스 계층은 Mockito 단위 테스트, 보안/필터/컨트롤러는 `@WebMvcTest` 슬라이스.
 3. API 계약 변경 시 `frontend-admin/src/services/api.ts` 와 이 문서의 API 표를 갱신.
-4. 커밋은 사용자가 요청할 때만. 요청 시 변경 단위별로 나눠 커밋하고, 제목은 기존 이력 스타일(영어 명령문 한 줄)을 따른다.
+4. **커밋·배포는 자동으로 진행한다** (2026-09-11 이후 정책). 소스를 수정했으면 `.\scripts\check.ps1` 전체 통과를 확인한 뒤, 매번 사용자에게 묻지 말고 변경 단위별로 나눠 커밋하고 `main` 에 push 한다 — push 가 Cloud Build 를 트리거해 GCP(backend/frontend) 자동 배포로 이어진다. 검증이 실패하면 절대 커밋·push 하지 말고 원인을 고친 뒤 재검증한다. 커밋 제목은 기존 이력 스타일(영어 명령문 한 줄)을 따른다.
 
 ## 알려진 제약
 
