@@ -19,6 +19,19 @@ function isLikelyMobile(): boolean {
   return uaMatch && hasTouch && coarsePointer;
 }
 
+// 페이지 내 카메라로 QR을 재스캔하면 jsQR이 QR에 인코딩된 전체 URL(.../checkin?t=<토큰>)을
+// 그대로 돌려준다. URL이면 t 파라미터만 뽑아 쓰고, 아니면(과거 QR 등) 원문을 토큰으로 그대로 쓴다.
+function extractQrToken(raw: string): string {
+  try {
+    const url = new URL(raw);
+    const t = url.searchParams.get('t');
+    if (t) return t;
+  } catch {
+    // 절대 URL이 아니면(예: URL 파라미터에서 이미 추출된 순수 토큰) 그대로 사용
+  }
+  return raw;
+}
+
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' });
 }
@@ -144,8 +157,9 @@ export default function CheckIn() {
     }
   }, [stopScan]);
 
-  const handleScanned = async (token: string) => {
+  const handleScanned = async (raw: string) => {
     const activeMode = modeRef.current;
+    const token = extractQrToken(raw);
     try {
       if (activeMode === 'CHECK_IN') {
         await attendanceApi.checkIn(deviceId, token);
