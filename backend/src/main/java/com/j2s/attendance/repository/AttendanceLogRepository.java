@@ -20,7 +20,7 @@ public interface AttendanceLogRepository extends JpaRepository<AttendanceLog, Lo
         JOIN FETCH a.worker w
         WHERE a.checkedAt BETWEEN :start AND :end
           AND (:employeeNo IS NULL OR w.employeeNo = :employeeNo)
-          AND (:name IS NULL OR LOWER(w.name) LIKE LOWER(CONCAT('%', :name, '%')))
+          AND (:name IS NULL OR LOWER(w.name) LIKE LOWER(CONCAT('%', CAST(:name AS string), '%')))
         ORDER BY a.checkedAt DESC
     """)
     List<AttendanceLog> search(
