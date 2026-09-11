@@ -4,11 +4,11 @@ import com.j2s.attendance.dto.DeviceRegisterDto;
 import com.j2s.attendance.entity.Device;
 import com.j2s.attendance.entity.DeviceStatus;
 import com.j2s.attendance.entity.Worker;
+import com.j2s.attendance.repository.AttendanceLogRepository;
 import com.j2s.attendance.repository.DeviceRepository;
 import com.j2s.attendance.repository.WorkerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +25,7 @@ public class DeviceService {
 
     private final DeviceRepository deviceRepository;
     private final WorkerRepository workerRepository;
+    private final AttendanceLogRepository attendanceLogRepository;
 
     @Transactional
     public Device registerDevice(DeviceRegisterDto dto) {
@@ -107,12 +108,9 @@ public class DeviceService {
         if (!deviceRepository.existsById(deviceId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "기기를 찾을 수 없습니다.");
         }
-        try {
-            deviceRepository.deleteById(deviceId);
-            deviceRepository.flush();
-        } catch (DataIntegrityViolationException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "출퇴근 기록이 있는 기기는 삭제할 수 없습니다. 권한 회수를 이용해주세요.");
-        }
+        // 출퇴근 이력은 감사 기록으로 보존하고 기기 참조만 끊은 뒤 삭제한다
+        attendanceLogRepository.detachDevice(deviceId);
+        deviceRepository.deleteById(deviceId);
         log.info("기기 삭제: id={}", deviceId);
     }
 }

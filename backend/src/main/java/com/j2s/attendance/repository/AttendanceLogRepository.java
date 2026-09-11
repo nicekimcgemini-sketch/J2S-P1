@@ -3,6 +3,7 @@ package com.j2s.attendance.repository;
 import com.j2s.attendance.entity.AttendanceLog;
 import com.j2s.attendance.entity.AttendanceType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
@@ -39,4 +40,9 @@ public interface AttendanceLogRepository extends JpaRepository<AttendanceLog, Lo
         LocalDateTime start,
         LocalDateTime end
     );
+
+    // 기기 삭제 시 출퇴근 이력은 보존하고 기기 참조만 끊는다
+    @Modifying
+    @Query("UPDATE AttendanceLog a SET a.device = null WHERE a.device.id = :deviceId")
+    void detachDevice(@Param("deviceId") Long deviceId);
 }

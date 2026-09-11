@@ -17,8 +17,9 @@ public class AttendanceLog {
     @JoinColumn(name = "worker_id", nullable = false)
     private Worker worker;
 
+    // 기기가 삭제되면 이력 보존을 위해 null로 끊어둔다 (관리자 기기 삭제 시 DeviceService 가 처리)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "device_id", nullable = false)
+    @JoinColumn(name = "device_id", nullable = true)
     private Device device;
 
     @Enumerated(EnumType.STRING)

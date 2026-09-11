@@ -4,6 +4,7 @@ import com.j2s.attendance.dto.DeviceRegisterDto;
 import com.j2s.attendance.entity.Device;
 import com.j2s.attendance.entity.DeviceStatus;
 import com.j2s.attendance.entity.Worker;
+import com.j2s.attendance.repository.AttendanceLogRepository;
 import com.j2s.attendance.repository.DeviceRepository;
 import com.j2s.attendance.repository.WorkerRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,7 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collections;
@@ -33,12 +33,14 @@ class DeviceServiceTest {
     private DeviceRepository deviceRepository;
     @Mock
     private WorkerRepository workerRepository;
+    @Mock
+    private AttendanceLogRepository attendanceLogRepository;
 
     private DeviceService deviceService;
 
     @BeforeEach
     void setUp() {
-        deviceService = new DeviceService(deviceRepository, workerRepository);
+        deviceService = new DeviceService(deviceRepository, workerRepository, attendanceLogRepository);
     }
 
     private DeviceRegisterDto dto(String hardwareId, String employeeNo) {
@@ -128,13 +130,13 @@ class DeviceServiceTest {
     }
 
     @Test
-    void deleteDevice_출퇴근_기록이_있으면_409로_변환된다() {
+    void deleteDevice_출퇴근_기록이_있어도_이력을_보존한채_삭제된다() {
         when(deviceRepository.existsById(9L)).thenReturn(true);
-        doThrow(new DataIntegrityViolationException("fk violation")).when(deviceRepository).deleteById(9L);
 
-        assertThatThrownBy(() -> deviceService.deleteDevice(9L))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("409");
+        deviceService.deleteDevice(9L);
+
+        verify(attendanceLogRepository).detachDevice(9L);
+        verify(deviceRepository).deleteById(9L);
     }
 
     @Test
@@ -146,5 +148,6 @@ class DeviceServiceTest {
                 .hasMessageContaining("404");
 
         verify(deviceRepository, never()).deleteById(any());
+        verify(attendanceLogRepository, never()).detachDevice(any());
     }
 }

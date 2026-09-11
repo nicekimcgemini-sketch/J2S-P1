@@ -67,7 +67,7 @@ cd mobile-app; npm install; npm run typecheck
 | `GET /api/admin/me` | ADMIN | 로그인 확인 |
 | `GET /api/admin/devices`, `/devices/pending` | ADMIN | |
 | `PATCH /api/admin/devices/{id}/status?status=` | ADMIN | APPROVED / REVOKED |
-| `DELETE /api/admin/devices/{id}` | ADMIN | 출퇴근 기록 있으면 409 |
+| `DELETE /api/admin/devices/{id}` | ADMIN | 출퇴근 기록이 있어도 삭제 가능. 기록은 보존하고 `attendance_logs.device_id` 만 null 처리 |
 | `GET/POST/DELETE /api/admin/ip-whitelist[/{id}]` | ADMIN | |
 | `GET /api/admin/attendance/logs?date=YYYY-MM-DD` | ADMIN | |
 
