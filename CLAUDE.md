@@ -9,7 +9,6 @@
 |---|---|---|
 | `backend/` | Spring Boot 3.3 · Java 17 · JPA · Spring Security · PostgreSQL(Supabase) | REST API |
 | `frontend-admin/` | React 18 · Vite 5 · TypeScript | `/qr` 현장 QR 화면(공개), `/checkin` 모바일 웹 체크인, `/admin/**` 관리자 콘솔(로그인) |
-| `mobile-app/` | React Native 0.74 · TypeScript | 작업자용 네이티브 스캔 앱 (스캐폴딩 단계, android/ios 폴더 미생성) |
 | `scripts/` | PowerShell / Bash / Node | 검증 하네스 (`check.ps1`, `check.sh`, `hooks/`) |
 
 배포: Cloud Build → Cloud Run (`backend/cloudbuild.yaml`, `frontend-admin/cloudbuild.yaml`, region asia-northeast3, GCP 프로젝트 `j2s-p1-attendance`). `main` 푸시 시 자동 배포되므로 **main에 올리기 전에 반드시 검증 스크립트를 통과**시킨다.
@@ -28,7 +27,7 @@
 ```powershell
 # 전체 검증 (백엔드 테스트 + 프론트 타입체크/빌드). 커밋 전 필수
 .\scripts\check.ps1            # bash: ./scripts/check.sh
-.\scripts\check.ps1 -Backend   # 일부만: -Backend / -Frontend / -Mobile
+.\scripts\check.ps1 -Backend   # 일부만: -Backend / -Frontend
 
 # 백엔드
 cd backend; .\mvnw -B -q test                     # 단위/슬라이스 테스트 (DB 불필요, H2 test 프로파일)
@@ -39,9 +38,6 @@ cd backend; .\mvnw spring-boot:run                # 실행 (루트 .env 의 SUPA
 cd frontend-admin; npm run typecheck              # tsc --noEmit
 cd frontend-admin; npm run build                  # tsc + vite build
 cd frontend-admin; npm run dev                    # http://localhost:5173
-
-# 모바일 (node_modules 설치 후)
-cd mobile-app; npm install; npm run typecheck
 ```
 
 백엔드 테스트는 `src/test/resources/application-test.yml` 의 H2 인메모리 DB를 쓰므로 Supabase 접속 없이 돌아간다. 실행 시에는 루트 `.env` 를 읽지 않으니 `SUPABASE_JDBC_URL`, `SUPABASE_DB_USER`, `SUPABASE_DB_PASSWORD` 를 셸 환경변수로 넘겨야 한다.
@@ -80,7 +76,7 @@ cd mobile-app; npm install; npm run typecheck
 - **백엔드**: Lombok(`@RequiredArgsConstructor`, `@Getter/@Setter`, `@Builder`) 사용. 오류는 `ResponseStatusException` 으로 HTTP 상태와 한국어 메시지를 함께 던진다. `@Valid` 실패 메시지는 `GlobalExceptionHandler` 가 그대로 노출한다. 엔티티 직렬화 순환(`Worker.devices` 는 `@JsonIgnore`)을 깨지 말 것. 새 조회 API는 LAZY 연관을 `JOIN FETCH` 로 미리 가져온다(`findAllWithWorker` 패턴).
 - **DB 스키마**: `ddl-auto: update` 에 의존한다. 컬럼 추가는 nullable 로 시작하고, 이름 변경/삭제는 Supabase 콘솔에서 수동 마이그레이션이 필요하므로 반드시 사용자에게 알린다.
 - **프론트**: 스타일링은 Tailwind CSS v4(`@tailwindcss/vite` 플러그인, `src/index.css` 의 `@theme` 블록에 `brand` 색상/폰트 토큰 정의)로 전면 전환했다. 클래스 기반 CSS 파일(`theme.css`)은 삭제됨 — 새 UI는 전부 Tailwind 유틸리티 클래스로 작성한다. 반복되는 패턴(통계 카드, 상태 배지, 패널, 버튼, 입력 필드)은 `src/components/dashboard.tsx` 의 공용 컴포넌트를 재사용한다. 아이콘은 `lucide-react`. 라이트 "가을" 톤(`etc/design1.png`의 1번째 컨셉 "단풍 출근부" 참고)으로 통일했으니 새 화면도 이 톤을 따른다 — `index.css`에서 기본 `slate` 팔레트를 크림/베이지 계열 라이트 톤으로 오버라이드(50이 가장 밝음, 950이 가장 어두움 — Tailwind 기본 방향 그대로)했고 `brand`는 호박/단풍빛 오렌지 액센트, 상태색은 에메랄드/앰버/로즈를 라이트 배경에 맞게 `-600`대 위주로 쓴다. 배경은 `bg-slate-100`(크림), 카드는 `bg-white`(또는 `bg-slate-50`) + `rounded-2xl`/`rounded-3xl` + `shadow-sm shadow-slate-900/5` + `border-slate-200`가 기본이며, 다크 테마 시절의 `border-white/…`, `backdrop-blur`, `bg-slate-900` 같은 클래스가 새로 섞여 들어가지 않도록 주의한다. `CheckIn.tsx`의 출근/퇴근 버튼처럼 이 앱의 핵심 액션은 참고 디자인처럼 큰 원형(`rounded-full`, h-40 w-40급) CTA로 강조한다. `font-display`는 현재 `font-sans`(Pretendard)와 동일하게 맞춰져 있다(참고 디자인에 세리프가 없음) — 제목은 `font-bold`로 굵기 차이만 준다. 데이터 테이블 화면(기기 관리 등)에서는 같은 숫자를 중복 표시하는 `StatRow`/`StatTile` 4칸 카드 그리드를 남발하지 말 것 — `DeviceManagement.tsx`처럼 카운트를 필터 탭 라벨에 붙이고 `PageHeader`의 `sub`에 요약을 한 줄로 녹이는 쪽이 더 정제돼 보인다. 행마다 반복되는 작업 버튼도 색깔 있는 필 버튼을 여러 개 늘어놓기보다 아이콘 전용 고스트 버튼(`title` 툴팁)로 줄이고, 이름+사번처럼 성격이 같은 두 값은 별도 컬럼 대신 한 셀에 주/부 텍스트로 묶어 컬럼 수를 줄인다. 상태는 컴포넌트 로컬 `useState`, 전역 상태 라이브러리 없음. 관리자 인증 토큰은 `sessionStorage` 의 `admin_auth`.
-- **비밀값**: 루트 `.env`, `frontend-admin/.env`, `mobile-app/.env` 는 절대 읽거나 커밋하지 않는다(훅이 차단). 예시는 `.env.example` 에만 추가한다. `SecurityConfig` 의 `admin1234` 는 개발용 기본값이며, 운영 값은 환경변수로 뺀다.
+- **비밀값**: 루트 `.env`, `frontend-admin/.env` 는 절대 읽거나 커밋하지 않는다(훅이 차단). 예시는 `.env.example` 에만 추가한다. `SecurityConfig` 의 `admin1234` 는 개발용 기본값이며, 운영 값은 환경변수로 뺀다.
 
 ## 작업 완료 기준 (Definition of Done)
 
@@ -92,5 +88,4 @@ cd mobile-app; npm install; npm run typecheck
 ## 알려진 제약
 
 - 로컬 JDK 는 25 이고 프로젝트 타깃은 17 이다. `pom.xml` 의 `maven.compiler.release=17` 로 컴파일은 되지만, JDK 17 설치가 가장 확실하다.
-- `mobile-app/` 은 `package.json` 과 `src/` 만 있는 스캐폴딩이다. `android/`, `ios/`, `index.js` 가 없어 실제 빌드는 불가능하며 타입체크만 한다.
 - `docker-compose.yml` 은 백엔드 컨테이너만 정의한다(DB 는 Supabase). 로컬 docker 미설치.

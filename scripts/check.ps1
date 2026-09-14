@@ -1,12 +1,11 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-    J2S-P1 검증 하네스. 커밋/배포 전에 실행해서 세 모듈이 모두 정상인지 확인한다.
+    J2S-P1 검증 하네스. 커밋/배포 전에 실행해서 두 모듈이 모두 정상인지 확인한다.
 
 .DESCRIPTION
     - backend        : Maven Wrapper 로 단위/슬라이스 테스트 실행 (H2, Supabase 접속 불필요)
     - frontend-admin : tsc --noEmit 타입체크 + vite 프로덕션 빌드
-    - mobile-app     : tsc --noEmit 타입체크 (android/ios 네이티브 프로젝트가 없어 빌드는 생략)
 
     각 모듈 폴더에 node_modules 가 없으면 자동으로 npm install 을 먼저 실행한다.
 
@@ -14,8 +13,6 @@
     백엔드만 검증한다.
 .PARAMETER Frontend
     frontend-admin 만 검증한다.
-.PARAMETER Mobile
-    mobile-app 만 검증한다.
 .PARAMETER SkipBuild
     frontend-admin 의 vite build 단계를 생략하고 타입체크만 한다 (빠른 반복 작업용).
 
@@ -30,7 +27,6 @@
 param(
     [switch]$Backend,
     [switch]$Frontend,
-    [switch]$Mobile,
     [switch]$SkipBuild
 )
 
@@ -38,7 +34,7 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 
 # 아무 스위치도 안 주면 전체 실행
-$runAll = -not ($Backend -or $Frontend -or $Mobile)
+$runAll = -not ($Backend -or $Frontend)
 
 $results = New-Object System.Collections.Generic.List[object]
 
@@ -53,6 +49,8 @@ function Invoke-Step {
     $prevLoc = Get-Location
     try {
         Set-Location $WorkingDir
+        # PowerShell 5.1 은 네이티브 명령의 stderr(JDK 경고 등)를 오류로 바꿔 'Stop' 에서 실패 처리하므로, 성공 여부는 종료 코드로만 판단한다
+        $ErrorActionPreference = 'Continue'
         & $Action
         if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) {
             throw "exit code $LASTEXITCODE"
@@ -96,15 +94,6 @@ if ($runAll -or $Frontend) {
         Invoke-Step -Name 'frontend-admin: build' -WorkingDir $feDir -Action {
             npm run build
         }
-    }
-}
-
-# --------------------------------------------------------------- mobile
-if ($runAll -or $Mobile) {
-    $mobileDir = Join-Path $repoRoot 'mobile-app'
-    Ensure-NodeModules -Dir $mobileDir -Label 'mobile-app'
-    Invoke-Step -Name 'mobile-app: typecheck (android/ios 네이티브 빌드는 스캐폴딩 미완성으로 생략)' -WorkingDir $mobileDir -Action {
-        npm run typecheck
     }
 }
 

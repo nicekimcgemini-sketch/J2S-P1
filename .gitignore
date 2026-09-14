@@ -10,7 +10,6 @@ backend/target/
 node_modules/
 frontend-admin/dist/
 frontend-admin/.env
-mobile-app/.env
 
 # IDE
 .idea/
