@@ -73,7 +73,7 @@ cd frontend-admin; npm run dev                    # http://localhost:5173
 | `PATCH /api/admin/devices/{id}/status?status=` | ADMIN | APPROVED / REVOKED |
 | `DELETE /api/admin/devices/{id}` | ADMIN | 출퇴근 기록이 있어도 삭제 가능. 기록은 보존하고 `attendance_logs.device_id` 만 null 처리 |
 | `GET/POST/DELETE /api/admin/ip-whitelist[/{id}]` | ADMIN | |
-| `GET /api/admin/attendance/logs?startDate=&endDate=&employeeNo=&name=` | ADMIN | 모두 생략 가능(생략 시 오늘 하루). `employeeNo` 는 정확히 일치, `name` 은 부분 일치(대소문자 무시) |
+| `GET /api/admin/attendance/logs?startDate=&endDate=&employeeNo=&name=` | ADMIN | 모두 생략 가능(생략 시 오늘 하루). `employeeNo` 는 정확히 일치, `name` 은 부분 일치(대소문자 무시). 각 기록의 `flag` 는 `LATE`/`EARLY_LEAVE`/`OVERTIME`/`null` — `WorkHourPolicy` 가 조회 시 계산(DB 미저장), 기준은 `app.work-hours.*`(기본 평일 09:00 / 18:00 / 19:00 이후 야근, 분 단위 비교, 주말은 판정 안 함) |
 | `DELETE /api/admin/attendance/logs/{id}` | ADMIN | 출퇴근 기록 1건 삭제 |
 
 프론트의 타입/호출은 `frontend-admin/src/services/api.ts` 한 곳에 모여 있다. 백엔드 응답 형태를 바꾸면 이 파일의 인터페이스도 같이 고친다.

@@ -40,6 +40,11 @@ server:
 app:
   qr:
     expiry-seconds: 60
+  # 출퇴근 통계의 지각/조퇴/야근 판정 기준 (평일, KST). WorkHourPolicy 참고
+  work-hours:
+    start-time: "${WORK_START_TIME:09:00}"      # 이 시각 이후 출근 = 지각
+    end-time: "${WORK_END_TIME:18:00}"          # 이 시각 이전 퇴근 = 조퇴
+    overtime-after: "${WORK_OVERTIME_AFTER:19:00}"  # 이 시각 이후 퇴근 = 야근
   jwt:
     secret: ${JWT_SECRET:j2s-attendance-secret-key-must-be-at-least-256-bits-long-for-security}
   cors:

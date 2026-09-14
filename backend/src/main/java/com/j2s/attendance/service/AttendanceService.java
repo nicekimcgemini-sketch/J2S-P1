@@ -26,6 +26,7 @@ public class AttendanceService {
     private final AttendanceLogRepository attendanceLogRepository;
     private final DeviceRepository deviceRepository;
     private final QrService qrService;
+    private final WorkHourPolicy workHourPolicy;
 
     @Transactional
     public AttendanceLog checkIn(AttendanceRequestDto dto) {
@@ -90,7 +91,9 @@ public class AttendanceService {
         String normalizedName = (name == null || name.isBlank()) ? null : name.trim();
 
         List<AttendanceLog> logs = attendanceLogRepository.search(start, end, normalizedEmployeeNo, normalizedName);
-        return logs.stream().map(AttendanceLogDto::from).toList();
+        return logs.stream()
+                .map(l -> AttendanceLogDto.from(l, workHourPolicy.classify(l.getType(), l.getCheckedAt())))
+                .toList();
     }
 
     @Transactional

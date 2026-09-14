@@ -1,11 +1,27 @@
 import { useEffect, useState } from 'react';
 import { format, subDays } from 'date-fns';
 import { Search, Trash2 } from 'lucide-react';
-import { attendanceApi, AttendanceLog } from '../services/api';
+import { attendanceApi, AttendanceFlag, AttendanceLog } from '../services/api';
 import { AlertBanner, Button, LoadingRow, Panel, PageHeader, StatRow, StatTile, StatusPill, inputClass } from '../components/dashboard';
 
+const FLAG_LABEL: Record<AttendanceFlag, string> = {
+  LATE: '지각',
+  EARLY_LEAVE: '조퇴',
+  OVERTIME: '야근',
+};
+
+// 구분(출근/퇴근) 배지와 헷갈리지 않게 테두리형으로 표시
+const FLAG_BADGE: Record<AttendanceFlag, string> = {
+  LATE: 'border-amber-300 bg-amber-50 text-amber-700',
+  EARLY_LEAVE: 'border-orange-300 bg-orange-50 text-orange-700',
+  OVERTIME: 'border-indigo-300 bg-indigo-50 text-indigo-700',
+};
+
+type FlagFilter = 'ALL' | AttendanceFlag;
+
 export default function AttendanceLogs() {
-  const [logs, setLogs] = useState<AttendanceLog[]>([]);
+  const [allLogs, setAllLogs] = useState<AttendanceLog[]>([]);
+  const [flagFilter, setFlagFilter] = useState<FlagFilter>('ALL');
   const [startDate, setStartDate] = useState(format(subDays(new Date(), 6), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [employeeNo, setEmployeeNo] = useState('');
@@ -25,7 +41,7 @@ export default function AttendanceLogs() {
         employeeNo: employeeNo.trim() || undefined,
         name: name.trim() || undefined,
       });
-      setLogs(data);
+      setAllLogs(data);
       setSelected(new Set());
     } catch (err: any) {
       setError(err?.response?.data?.message || '조회에 실패했습니다.');
@@ -36,8 +52,15 @@ export default function AttendanceLogs() {
 
   useEffect(() => { load(); }, []);
 
-  const checkIns = logs.filter(l => l.type === 'CHECK_IN').length;
-  const checkOuts = logs.filter(l => l.type === 'CHECK_OUT').length;
+  const checkIns = allLogs.filter(l => l.type === 'CHECK_IN').length;
+  const checkOuts = allLogs.filter(l => l.type === 'CHECK_OUT').length;
+  const flagCount = (flag: AttendanceFlag) => allLogs.filter(l => l.flag === flag).length;
+  const logs = flagFilter === 'ALL' ? allLogs : allLogs.filter(l => l.flag === flagFilter);
+
+  const changeFilter = (next: FlagFilter) => {
+    setFlagFilter(next);
+    setSelected(new Set());
+  };
 
   const applyDelete = async (ids: number[]) => {
     if (!confirm(`${ids.length}건을 삭제할까요? 되돌릴 수 없습니다.`)) return;
@@ -67,10 +90,13 @@ export default function AttendanceLogs() {
 
   return (
     <div className="flex flex-1 flex-col gap-5 p-7">
-      <PageHeader title="출퇴근 통계" sub="한국시간(KST) 기준 기록입니다." />
+      <PageHeader
+        title="출퇴근 통계"
+        sub="한국시간(KST) 기준 기록입니다. 지각·조퇴·야근은 평일 근무시간 기준으로 표시하며 주말 기록은 판정하지 않습니다."
+      />
 
       <StatRow>
-        <StatTile label="전체 기록" value={logs.length} />
+        <StatTile label="전체 기록" value={allLogs.length} />
         <StatTile label="출근" value={checkIns} tone="ok" />
         <StatTile label="퇴근" value={checkOuts} tone="crit" />
       </StatRow>
@@ -106,6 +132,29 @@ export default function AttendanceLogs() {
           </div>
         }
       >
+        <div className="flex items-center gap-5 border-b border-slate-200 px-5 pt-3">
+          {([
+            { key: 'ALL' as const, label: '전체', count: allLogs.length },
+            { key: 'LATE' as const, label: '지각', count: flagCount('LATE') },
+            { key: 'EARLY_LEAVE' as const, label: '조퇴', count: flagCount('EARLY_LEAVE') },
+            { key: 'OVERTIME' as const, label: '야근', count: flagCount('OVERTIME') },
+          ]).map(f => (
+            <button
+              key={f.key}
+              onClick={() => changeFilter(f.key)}
+              className={[
+                '-mb-px flex items-center gap-1.5 border-b-2 pb-2.5 text-[13.5px] font-semibold transition-colors',
+                flagFilter === f.key
+                  ? 'border-brand-600 text-slate-900'
+                  : 'border-transparent text-slate-400 hover:text-slate-700',
+              ].join(' ')}
+            >
+              {f.label}
+              <span className={flagFilter === f.key ? 'text-brand-600' : 'text-slate-300'}>{f.count}</span>
+            </button>
+          ))}
+        </div>
+
         {loading ? (
           <LoadingRow />
         ) : (
@@ -142,9 +191,18 @@ export default function AttendanceLogs() {
                     <td className="px-3.5 py-2.5 font-medium text-slate-800">{l.workerName}</td>
                     <td className="px-3.5 py-2.5 font-mono text-[12.5px] text-slate-600">{l.employeeNo}</td>
                     <td className="px-3.5 py-2.5">
-                      <StatusPill tone={l.type === 'CHECK_IN' ? 'ok' : 'crit'}>
-                        {l.type === 'CHECK_IN' ? '출근' : '퇴근'}
-                      </StatusPill>
+                      <div className="flex items-center gap-1.5">
+                        <StatusPill tone={l.type === 'CHECK_IN' ? 'ok' : 'crit'}>
+                          {l.type === 'CHECK_IN' ? '출근' : '퇴근'}
+                        </StatusPill>
+                        {l.flag && (
+                          <span
+                            className={`inline-flex whitespace-nowrap rounded-full border px-2 py-0.5 text-[11.5px] font-semibold ${FLAG_BADGE[l.flag]}`}
+                          >
+                            {FLAG_LABEL[l.flag]}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="whitespace-nowrap px-3.5 py-2.5 font-mono text-xs text-slate-500">
                       {new Date(l.checkedAt).toLocaleString('ko-KR', { hour12: false })}

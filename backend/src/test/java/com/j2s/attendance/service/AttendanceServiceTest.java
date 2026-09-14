@@ -1,5 +1,6 @@
 package com.j2s.attendance.service;
 
+import com.j2s.attendance.dto.AttendanceFlag;
 import com.j2s.attendance.dto.AttendanceRequestDto;
 import com.j2s.attendance.entity.AttendanceLog;
 import com.j2s.attendance.entity.AttendanceType;
@@ -49,7 +50,8 @@ class AttendanceServiceTest {
 
     @BeforeEach
     void setUp() {
-        attendanceService = new AttendanceService(attendanceLogRepository, deviceRepository, qrService);
+        attendanceService = new AttendanceService(attendanceLogRepository, deviceRepository, qrService,
+                new WorkHourPolicy("09:00", "18:00", "19:00"));
 
         worker = Worker.builder().id(1L).employeeNo("S00001").name("홍길동").build();
         approvedDevice = Device.builder()
@@ -233,6 +235,22 @@ class AttendanceServiceTest {
         attendanceService.getLogs(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31), "S00001", "홍");
 
         verify(attendanceLogRepository).search(any(), any(), eq("S00001"), eq("홍"));
+    }
+
+    @Test
+    void getLogs_기록마다_지각_조퇴_야근_판정을_담는다() {
+        AttendanceLog late = AttendanceLog.builder().id(1L).worker(worker).type(AttendanceType.CHECK_IN)
+                .checkedAt(LocalDateTime.parse("2026-09-14T09:20:00")).build();
+        AttendanceLog normalOut = AttendanceLog.builder().id(2L).worker(worker).type(AttendanceType.CHECK_OUT)
+                .checkedAt(LocalDateTime.parse("2026-09-14T18:10:00")).build();
+        AttendanceLog overtime = AttendanceLog.builder().id(3L).worker(worker).type(AttendanceType.CHECK_OUT)
+                .checkedAt(LocalDateTime.parse("2026-09-15T21:00:00")).build();
+        when(attendanceLogRepository.search(any(), any(), isNull(), isNull())).thenReturn(List.of(late, normalOut, overtime));
+
+        var result = attendanceService.getLogs(LocalDate.of(2026, 9, 14), LocalDate.of(2026, 9, 15), null, null);
+
+        assertThat(result).extracting("flag")
+                .containsExactly(AttendanceFlag.LATE, null, AttendanceFlag.OVERTIME);
     }
 
     @Test

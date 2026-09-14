@@ -75,7 +75,11 @@ export interface AttendanceLog {
   employeeNo: string;
   type: 'CHECK_IN' | 'CHECK_OUT';
   checkedAt: string;
+  /** 평일 근무시간 기준 판정 (지각/조퇴/야근), 해당 없으면 null */
+  flag: AttendanceFlag | null;
 }
+
+export type AttendanceFlag = 'LATE' | 'EARLY_LEAVE' | 'OVERTIME';
 
 export interface IpWhitelistEntry {
   id: number;
