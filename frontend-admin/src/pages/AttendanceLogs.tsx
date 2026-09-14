@@ -92,7 +92,7 @@ export default function AttendanceLogs() {
     <div className="flex flex-1 flex-col gap-5 p-7">
       <PageHeader
         title="출퇴근 통계"
-        sub="한국시간(KST) 기준 기록입니다. 지각·조퇴·야근은 평일 근무시간 기준으로 표시하며 주말 기록은 판정하지 않습니다."
+        sub="한국시간(KST) 기준 기록입니다. 지각·조퇴·야근은 평일 근무시간 기준으로 표시하며 주말과 등록된 휴일 기록은 판정하지 않습니다."
       />
 
       <StatRow>

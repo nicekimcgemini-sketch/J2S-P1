@@ -117,7 +117,7 @@ export interface AttendanceLogQuery {
 
 export type DailyStatus =
   | 'NORMAL' | 'LATE' | 'EARLY_LEAVE' | 'OVERTIME' | 'ABSENT'
-  | 'MISSING_CHECK_IN' | 'MISSING_CHECK_OUT' | 'WORKING' | 'NOT_YET' | 'WEEKEND_WORK';
+  | 'MISSING_CHECK_IN' | 'MISSING_CHECK_OUT' | 'WORKING' | 'NOT_YET' | 'WEEKEND_WORK' | 'HOLIDAY_WORK';
 
 /** 일별 근태 요약 한 행 (작업자 × 날짜) */
 export interface DailyAttendance {
@@ -126,8 +126,11 @@ export interface DailyAttendance {
   employeeNo: string;
   checkInAt: string | null;
   checkOutAt: string | null;
-  /** 출근~퇴근 분(휴게시간 미차감), 둘 중 하나라도 없으면 null */
+  /** 출근~퇴근 분에서 휴게 구간과 겹친 breakMinutes 를 뺀 값. 출퇴근 중 하나라도 없으면 null */
   workMinutes: number | null;
+  breakMinutes: number | null;
+  /** 등록된 휴일이면 그 이름 */
+  holidayName: string | null;
   statuses: DailyStatus[];
 }
 
@@ -150,6 +153,19 @@ export const ipWhitelistApi = {
   add: (ipAddress: string, description: string) =>
     adminHttp.post<IpWhitelistEntry>('/admin/ip-whitelist', { ipAddress, description }).then(r => r.data),
   remove: (id: number) => adminHttp.delete(`/admin/ip-whitelist/${id}`),
+};
+
+export interface Holiday {
+  id: number;
+  date: string;
+  name: string;
+  createdAt: string;
+}
+
+export const holidayApi = {
+  getAll: (year?: number) => adminHttp.get<Holiday[]>('/admin/holidays', { params: { year } }).then(r => r.data),
+  add: (date: string, name: string) => adminHttp.post<Holiday>('/admin/holidays', { date, name }).then(r => r.data),
+  remove: (id: number) => adminHttp.delete(`/admin/holidays/${id}`),
 };
 
 export const qrApi = {

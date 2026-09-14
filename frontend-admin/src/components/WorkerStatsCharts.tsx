@@ -15,6 +15,7 @@ export interface WorkerStats {
   overtime: number;
   absent: number;
   missing: number;
+  /** 주말 또는 등록된 휴일에 근무한 날 */
   weekendWork: number;
 }
 
@@ -41,7 +42,7 @@ export function aggregateWorkerStats(rows: DailyAttendance[]): WorkerStats[] {
       if (st === 'OVERTIME') s.overtime++;
       if (st === 'ABSENT') s.absent++;
       if (st === 'MISSING_CHECK_IN' || st === 'MISSING_CHECK_OUT') s.missing++;
-      if (st === 'WEEKEND_WORK') s.weekendWork++;
+      if (st === 'WEEKEND_WORK' || st === 'HOLIDAY_WORK') s.weekendWork++;
     }
   }
   return [...map.values()].sort((a, b) => a.workerName.localeCompare(b.workerName, 'ko'));
@@ -198,7 +199,7 @@ export function WorkerStatsCharts({ stats }: { stats: WorkerStats[] }) {
         </div>
       </ChartCard>
 
-      <ChartCard title="직원별 총 근무시간" sub="출근~퇴근 시간 합계, 휴게시간 미차감 (많은 순)">
+      <ChartCard title="직원별 총 근무시간" sub="출근~퇴근 시간에서 점심 휴게시간을 뺀 합계 (많은 순)">
         <div className="flex flex-col">
           {byHours.map(s => (
             <BarRow

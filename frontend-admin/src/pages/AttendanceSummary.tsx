@@ -17,6 +17,7 @@ const STATUS_LABEL: Record<DailyStatus, string> = {
   WORKING: '근무 중',
   NOT_YET: '미출근',
   WEEKEND_WORK: '주말 특근',
+  HOLIDAY_WORK: '휴일 근무',
 };
 
 const STATUS_BADGE: Record<DailyStatus, string> = {
@@ -30,6 +31,7 @@ const STATUS_BADGE: Record<DailyStatus, string> = {
   WORKING: 'border-sky-300 bg-sky-50 text-sky-700',
   NOT_YET: 'border-slate-200 bg-white text-slate-500',
   WEEKEND_WORK: 'border-violet-300 bg-violet-50 text-violet-700',
+  HOLIDAY_WORK: 'border-fuchsia-300 bg-fuchsia-50 text-fuchsia-700',
 };
 
 type StatusFilter = 'ALL' | 'ABSENT' | 'LATE' | 'EARLY_LEAVE' | 'OVERTIME' | 'MISSING';
@@ -105,7 +107,7 @@ export default function AttendanceSummary() {
     <div className="flex flex-1 flex-col gap-5 p-7">
       <PageHeader
         title="근태 요약"
-        sub={`직원 ${stats.length}명 · 결근 ${countOf('ABSENT')} · 지각 ${countOf('LATE')} · 조퇴 ${countOf('EARLY_LEAVE')} · 야근 ${countOf('OVERTIME')} · 기록 누락 ${countOf('MISSING')} — 평일 근무시간 기준, 공휴일은 구분하지 않습니다.`}
+        sub={`직원 ${stats.length}명 · 결근 ${countOf('ABSENT')} · 지각 ${countOf('LATE')} · 조퇴 ${countOf('EARLY_LEAVE')} · 야근 ${countOf('OVERTIME')} · 기록 누락 ${countOf('MISSING')} — 평일 근무시간 기준, 주말과 공휴일 관리에 등록된 휴일은 근무일에서 뺍니다.`}
       />
 
       {/* 기간·직원 조건은 아래 그래프·통계표·일별 표 전체에 함께 적용된다 */}
@@ -145,7 +147,7 @@ export default function AttendanceSummary() {
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                     <th className="whitespace-nowrap px-3.5 py-2.5">직원</th>
-                    {['근무일', '총 근무시간', '정상', '지각', '조퇴', '야근', '결근', '기록 누락', '주말 특근'].map(h => (
+                    {['근무일', '총 근무시간', '정상', '지각', '조퇴', '야근', '결근', '기록 누락', '주말·휴일 근무'].map(h => (
                       <th key={h} className="whitespace-nowrap px-3.5 py-2.5 text-right">{h}</th>
                     ))}
                   </tr>
@@ -210,8 +212,9 @@ export default function AttendanceSummary() {
                 <tbody>
                   {visibleRows.map(r => (
                     <tr key={`${r.date}-${r.employeeNo}`} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                      <td className="whitespace-nowrap px-3.5 py-2.5 font-mono text-xs text-slate-600">
-                        {format(parseISO(r.date), 'M/d (EEE)', { locale: ko })}
+                      <td className="whitespace-nowrap px-3.5 py-2.5">
+                        <div className="font-mono text-xs text-slate-600">{format(parseISO(r.date), 'M/d (EEE)', { locale: ko })}</div>
+                        {r.holidayName && <div className="text-[11px] text-fuchsia-700">{r.holidayName}</div>}
                       </td>
                       <td className="px-3.5 py-2.5">
                         <span className="font-medium text-slate-800">{r.workerName}</span>
@@ -219,7 +222,10 @@ export default function AttendanceSummary() {
                       </td>
                       <td className="whitespace-nowrap px-3.5 py-2.5 font-mono text-xs text-slate-600">{timeOf(r.checkInAt)}</td>
                       <td className="whitespace-nowrap px-3.5 py-2.5 font-mono text-xs text-slate-600">{timeOf(r.checkOutAt)}</td>
-                      <td className="whitespace-nowrap px-3.5 py-2.5 font-mono text-xs text-slate-600">{durationOf(r.workMinutes)}</td>
+                      <td className="whitespace-nowrap px-3.5 py-2.5 font-mono text-xs text-slate-600">
+                        {durationOf(r.workMinutes)}
+                        {!!r.breakMinutes && <span className="ml-1.5 text-[11px] text-slate-400">휴게 {durationOf(r.breakMinutes)}</span>}
+                      </td>
                       <td className="px-3.5 py-2.5">
                         <div className="flex flex-wrap gap-1.5">
                           {r.statuses.map(s => (
