@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
-import { Activity, BarChart3, Clock, LogOut, RotateCw, ShieldCheck, Smartphone } from 'lucide-react';
+import { Activity, BarChart3, CalendarCheck, Clock, LogOut, RotateCw, ShieldCheck, Smartphone } from 'lucide-react';
 import QrScreen from './pages/QrScreen';
 import CheckIn from './pages/CheckIn';
 import DeviceManagement from './pages/DeviceManagement';
 import AttendanceLogs from './pages/AttendanceLogs';
+import AttendanceSummary from './pages/AttendanceSummary';
 import IpWhitelist from './pages/IpWhitelist';
 import Login from './pages/Login';
 import {
@@ -108,6 +109,7 @@ function Clock24() {
 const navItems = [
   { to: '/admin/devices', label: '기기 관리', icon: Smartphone, section: '모니터링' },
   { to: '/admin/logs', label: '출퇴근 통계', icon: BarChart3, section: '모니터링' },
+  { to: '/admin/summary', label: '근태 요약', icon: CalendarCheck, section: '모니터링' },
   { to: '/admin/ip-whitelist', label: '허용 IP 관리', icon: ShieldCheck, section: '설정' },
 ] as const;
 
@@ -210,6 +212,7 @@ export default function App() {
           <Route path="devices" element={<DeviceManagement />} />
           <Route path="ip-whitelist" element={<IpWhitelist />} />
           <Route path="logs" element={<AttendanceLogs />} />
+          <Route path="summary" element={<AttendanceSummary />} />
         </Route>
       </Routes>
     </BrowserRouter>

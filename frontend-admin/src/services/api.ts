@@ -115,7 +115,25 @@ export interface AttendanceLogQuery {
   name?: string;
 }
 
+export type DailyStatus =
+  | 'NORMAL' | 'LATE' | 'EARLY_LEAVE' | 'OVERTIME' | 'ABSENT'
+  | 'MISSING_CHECK_IN' | 'MISSING_CHECK_OUT' | 'WORKING' | 'NOT_YET' | 'WEEKEND_WORK';
+
+/** 일별 근태 요약 한 행 (작업자 × 날짜) */
+export interface DailyAttendance {
+  date: string;
+  workerName: string;
+  employeeNo: string;
+  checkInAt: string | null;
+  checkOutAt: string | null;
+  /** 출근~퇴근 분(휴게시간 미차감), 둘 중 하나라도 없으면 null */
+  workMinutes: number | null;
+  statuses: DailyStatus[];
+}
+
 export const attendanceApi = {
+  getDailySummary: (query: AttendanceLogQuery) =>
+    adminHttp.get<DailyAttendance[]>('/admin/attendance/daily', { params: query }).then(r => r.data),
   getLogs: (query: AttendanceLogQuery) =>
     adminHttp.get<AttendanceLog[]>('/admin/attendance/logs', {
       params: query,
