@@ -21,7 +21,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,7 +33,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 /**
- * 일별 근태 판정(정상/지각/조퇴/야근/결근/누락/근무 중/미출근/주말 특근)과 결근 대상 선정 규칙을 고정한다.
+ * 일별 근태 판정(정상/지각/조퇴/야근/결근/누락/근무 중/미출근/주말 특근/휴일 근무), 휴게시간 차감, 결근 대상 선정 규칙을 고정한다.
  * 오늘은 2026-09-14(월)로 고정. 9/11 금, 9/12 토, 9/10 목.
  */
 @ExtendWith(MockitoExtension.class)
@@ -43,23 +45,27 @@ class DailyAttendanceServiceTest {
     private AttendanceLogRepository attendanceLogRepository;
     @Mock
     private DeviceRepository deviceRepository;
+    @Mock
+    private HolidayService holidayService;
 
     private DailyAttendanceService service;
     private Worker kim;
     private final List<AttendanceLog> logs = new ArrayList<>();
     private final List<Device> devices = new ArrayList<>();
+    private final Map<LocalDate, String> holidays = new HashMap<>();
 
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(LocalDateTime.parse("2026-09-14T15:00:00").atZone(SEOUL).toInstant(), SEOUL);
         service = new DailyAttendanceService(attendanceLogRepository, deviceRepository,
-                new WorkHourPolicy("09:00", "18:00", "19:00"), clock);
+                new WorkHourPolicy("09:00", "18:00", "19:00", "12:00", "13:00"), holidayService, clock);
 
         kim = worker("S00001", "김민준");
         devices.add(approvedDevice(kim, "2026-09-01T10:00:00", null));
 
         lenient().when(attendanceLogRepository.search(any(), any(), any(), any())).thenReturn(logs);
         lenient().when(deviceRepository.findAllWithWorker()).thenReturn(devices);
+        lenient().when(holidayService.getHolidayNames(any(), any())).thenReturn(holidays);
     }
 
     private static Worker worker(String employeeNo, String name) {
@@ -84,14 +90,15 @@ class DailyAttendanceServiceTest {
     }
 
     @Test
-    void 기준_안에_출퇴근하면_정상이고_근무시간을_분으로_계산한다() {
+    void 기준_안에_출퇴근하면_정상이고_근무시간은_점심_휴게_1시간을_뺀_분이다() {
         log(kim, AttendanceType.CHECK_IN, "2026-09-10T08:50:00");
         log(kim, AttendanceType.CHECK_OUT, "2026-09-10T18:20:00");
 
         DailyAttendanceDto row = only(LocalDate.of(2026, 9, 10));
 
         assertThat(row.statuses()).containsExactly(DailyStatus.NORMAL);
-        assertThat(row.workMinutes()).isEqualTo(570L);
+        assertThat(row.breakMinutes()).isEqualTo(60L);
+        assertThat(row.workMinutes()).isEqualTo(510L);   // 08:50~18:20 = 570분 - 휴게 60분
     }
 
     @Test
@@ -193,6 +200,37 @@ class DailyAttendanceServiceTest {
         List<DailyAttendanceDto> rows = service.getDailySummary(LocalDate.of(2026, 9, 10), LocalDate.of(2026, 9, 10), null, "서연");
 
         assertThat(rows).extracting(DailyAttendanceDto::workerName).containsExactly("이서연");
+    }
+
+    @Test
+    void 점심_전에_퇴근하면_휴게시간을_빼지_않는다() {
+        log(kim, AttendanceType.CHECK_IN, "2026-09-10T08:30:00");
+        log(kim, AttendanceType.CHECK_OUT, "2026-09-10T11:30:00");
+
+        DailyAttendanceDto row = only(LocalDate.of(2026, 9, 10));
+
+        assertThat(row.breakMinutes()).isZero();
+        assertThat(row.workMinutes()).isEqualTo(180L);
+    }
+
+    @Test
+    void 등록된_휴일에는_기록이_없어도_결근으로_잡지_않는다() {
+        holidays.put(LocalDate.of(2026, 9, 10), "회사 창립기념일");
+
+        assertThat(service.getDailySummary(LocalDate.of(2026, 9, 10), LocalDate.of(2026, 9, 10), null, null)).isEmpty();
+    }
+
+    @Test
+    void 등록된_휴일에_기록이_있으면_휴일_근무로_표시하고_지각_판정을_하지_않는다() {
+        holidays.put(LocalDate.of(2026, 9, 10), "회사 창립기념일");
+        log(kim, AttendanceType.CHECK_IN, "2026-09-10T10:00:00");
+        log(kim, AttendanceType.CHECK_OUT, "2026-09-10T15:00:00");
+
+        DailyAttendanceDto row = only(LocalDate.of(2026, 9, 10));
+
+        assertThat(row.statuses()).containsExactly(DailyStatus.HOLIDAY_WORK);
+        assertThat(row.holidayName()).isEqualTo("회사 창립기념일");
+        assertThat(row.workMinutes()).isEqualTo(240L);   // 10:00~15:00 = 300분 - 휴게 60분
     }
 
     @Test

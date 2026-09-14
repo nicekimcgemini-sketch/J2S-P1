@@ -13,5 +13,6 @@ public enum DailyStatus {
     MISSING_CHECK_OUT,  // 퇴근 누락: 지난 날인데 출근 기록만 있음
     WORKING,            // 근무 중: 오늘 출근했고 아직 퇴근 기록 없음
     NOT_YET,            // 미출근: 오늘(평일) 아직 기록 없음
-    WEEKEND_WORK        // 주말 특근: 토·일 기록 (지각/조퇴 판정 안 함)
+    WEEKEND_WORK,       // 주말 특근: 토·일 기록 (지각/조퇴 판정 안 함)
+    HOLIDAY_WORK        // 휴일 근무: 등록된 휴일(평일)에 기록 있음 (지각/조퇴 판정 안 함)
 }

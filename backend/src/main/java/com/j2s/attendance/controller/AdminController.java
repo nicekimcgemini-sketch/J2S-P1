@@ -2,13 +2,17 @@ package com.j2s.attendance.controller;
 
 import com.j2s.attendance.dto.AttendanceLogDto;
 import com.j2s.attendance.dto.DailyAttendanceDto;
+import com.j2s.attendance.dto.HolidayRequestDto;
 import com.j2s.attendance.entity.Device;
 import com.j2s.attendance.entity.DeviceStatus;
+import com.j2s.attendance.entity.Holiday;
 import com.j2s.attendance.entity.IpWhitelist;
 import com.j2s.attendance.service.AttendanceService;
 import com.j2s.attendance.service.DailyAttendanceService;
 import com.j2s.attendance.service.DeviceService;
+import com.j2s.attendance.service.HolidayService;
 import com.j2s.attendance.service.IpWhitelistService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +35,7 @@ public class AdminController {
     private final AttendanceService attendanceService;
     private final IpWhitelistService ipWhitelistService;
     private final DailyAttendanceService dailyAttendanceService;
+    private final HolidayService holidayService;
 
     // 허용 IP 목록 조회
     @GetMapping("/ip-whitelist")
@@ -52,6 +57,25 @@ public class AdminController {
     }
 
     public record IpWhitelistRequest(String ipAddress, String description) {}
+
+    // 휴일 목록 조회 (year 생략 시 전체)
+    @GetMapping("/holidays")
+    public ResponseEntity<List<Holiday>> getHolidays(@RequestParam(required = false) Integer year) {
+        return ResponseEntity.ok(holidayService.getAll(year));
+    }
+
+    // 휴일 등록
+    @PostMapping("/holidays")
+    public ResponseEntity<Holiday> addHoliday(@Valid @RequestBody HolidayRequestDto request) {
+        return ResponseEntity.status(201).body(holidayService.add(request.getDate(), request.getName()));
+    }
+
+    // 휴일 삭제
+    @DeleteMapping("/holidays/{id}")
+    public ResponseEntity<Void> removeHoliday(@PathVariable Long id) {
+        holidayService.remove(id);
+        return ResponseEntity.noContent().build();
+    }
 
     // 전체 기기 목록 조회
     @GetMapping("/devices")

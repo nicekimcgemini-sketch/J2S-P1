@@ -41,6 +41,8 @@ class AttendanceServiceTest {
     private DeviceRepository deviceRepository;
     @Mock
     private QrService qrService;
+    @Mock
+    private HolidayService holidayService;
 
     private AttendanceService attendanceService;
 
@@ -51,7 +53,7 @@ class AttendanceServiceTest {
     @BeforeEach
     void setUp() {
         attendanceService = new AttendanceService(attendanceLogRepository, deviceRepository, qrService,
-                new WorkHourPolicy("09:00", "18:00", "19:00"));
+                new WorkHourPolicy("09:00", "18:00", "19:00", "12:00", "13:00"), holidayService);
 
         worker = Worker.builder().id(1L).employeeNo("S00001").name("홍길동").build();
         approvedDevice = Device.builder()
@@ -246,11 +248,24 @@ class AttendanceServiceTest {
         AttendanceLog overtime = AttendanceLog.builder().id(3L).worker(worker).type(AttendanceType.CHECK_OUT)
                 .checkedAt(LocalDateTime.parse("2026-09-15T21:00:00")).build();
         when(attendanceLogRepository.search(any(), any(), isNull(), isNull())).thenReturn(List.of(late, normalOut, overtime));
+        when(holidayService.getHolidayNames(any(), any())).thenReturn(java.util.Map.of());
 
         var result = attendanceService.getLogs(LocalDate.of(2026, 9, 14), LocalDate.of(2026, 9, 15), null, null);
 
         assertThat(result).extracting("flag")
                 .containsExactly(AttendanceFlag.LATE, null, AttendanceFlag.OVERTIME);
+    }
+
+    @Test
+    void getLogs_등록된_휴일_기록은_판정하지_않는다() {
+        AttendanceLog lateOnHoliday = AttendanceLog.builder().id(1L).worker(worker).type(AttendanceType.CHECK_IN)
+                .checkedAt(LocalDateTime.parse("2026-09-24T10:00:00")).build();
+        when(attendanceLogRepository.search(any(), any(), isNull(), isNull())).thenReturn(List.of(lateOnHoliday));
+        when(holidayService.getHolidayNames(any(), any())).thenReturn(java.util.Map.of(LocalDate.of(2026, 9, 24), "추석"));
+
+        var result = attendanceService.getLogs(LocalDate.of(2026, 9, 24), LocalDate.of(2026, 9, 24), null, null);
+
+        assertThat(result.get(0).getFlag()).isNull();
     }
 
     @Test

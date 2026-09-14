@@ -45,6 +45,8 @@ app:
     start-time: "${WORK_START_TIME:09:00}"      # 이 시각 이후 출근 = 지각
     end-time: "${WORK_END_TIME:18:00}"          # 이 시각 이전 퇴근 = 조퇴
     overtime-after: "${WORK_OVERTIME_AFTER:19:00}"  # 이 시각 이후 퇴근 = 야근
+    break-start: "${WORK_BREAK_START:12:00}"    # 휴게 구간 — 근무시간 계산 시 출퇴근 구간과 겹치는 만큼 차감
+    break-end: "${WORK_BREAK_END:13:00}"
   jwt:
     secret: ${JWT_SECRET:j2s-attendance-secret-key-must-be-at-least-256-bits-long-for-security}
   cors:

@@ -34,7 +34,8 @@ import java.util.Map;
  *
  * 결근 판정 대상("그날 출근해야 했던 작업자")은 그날 승인 상태였던 기기를 가진 작업자다
  * (approvedAt 이 그날 이전·당일이고, 해제되지 않았거나 그날 이후 해제). 기록이 있는 작업자는 항상 포함한다.
- * 기기가 삭제된 작업자는 기록이 없는 날을 결근으로 잡을 수 없다. 공휴일은 구분하지 않는다.
+ * 기기가 삭제된 작업자는 기록이 없는 날을 결근으로 잡을 수 없다.
+ * 주말·등록된 휴일(HolidayService)은 근무일이 아니므로 기록이 있을 때만 행을 만들고 지각/조퇴/야근을 판정하지 않는다.
  */
 @Service
 @RequiredArgsConstructor
@@ -45,6 +46,7 @@ public class DailyAttendanceService {
     private final AttendanceLogRepository attendanceLogRepository;
     private final DeviceRepository deviceRepository;
     private final WorkHourPolicy workHourPolicy;
+    private final HolidayService holidayService;
     private final Clock clock;
 
     @Transactional(readOnly = true)
@@ -79,6 +81,8 @@ public class DailyAttendanceService {
                     .add(log);
         }
 
+        Map<LocalDate, String> holidays = holidayService.getHolidayNames(startDate, lastDay);
+
         List<Device> devices = deviceRepository.findAllWithWorker().stream()
                 .filter(d -> d.getApprovedAt() != null)
                 .filter(d -> matches(d.getWorker(), normalizedEmployeeNo, normalizedName))
@@ -89,10 +93,10 @@ public class DailyAttendanceService {
         for (LocalDate date = startDate; !date.isAfter(lastDay); date = date.plusDays(1)) {
             for (Worker worker : workers.values()) {
                 DayLogs day = byWorker.getOrDefault(worker.getEmployeeNo(), Map.of()).get(date);
-                if (day == null && !isExpectedToWork(worker, date, devices)) {
+                if (day == null && !isExpectedToWork(worker, date, devices, holidays)) {
                     continue;
                 }
-                rows.add(summarize(worker, date, day, today));
+                rows.add(summarize(worker, date, day, today, holidays));
             }
         }
 
@@ -101,28 +105,32 @@ public class DailyAttendanceService {
         return rows;
     }
 
-    private DailyAttendanceDto summarize(Worker worker, LocalDate date, DayLogs day, LocalDate today) {
+    private DailyAttendanceDto summarize(Worker worker, LocalDate date, DayLogs day, LocalDate today,
+                                         Map<LocalDate, String> holidays) {
         LocalDateTime in = day == null ? null : day.checkIn;
         LocalDateTime out = day == null ? null : day.checkOut;
         boolean weekend = isWeekend(date);
+        String holidayName = holidays.get(date);
         boolean isToday = date.equals(today);
         List<DailyStatus> statuses = new ArrayList<>();
 
         if (weekend) {
-            statuses.add(DailyStatus.WEEKEND_WORK);   // 주말은 기록이 있을 때만 행이 만들어진다
+            statuses.add(DailyStatus.WEEKEND_WORK);   // 주말·휴일은 기록이 있을 때만 행이 만들어진다
+        } else if (holidayName != null) {
+            statuses.add(DailyStatus.HOLIDAY_WORK);
         } else if (in == null && out == null) {
             statuses.add(isToday ? DailyStatus.NOT_YET : DailyStatus.ABSENT);
         } else {
             if (in == null) {
                 statuses.add(DailyStatus.MISSING_CHECK_IN);
-            } else if (workHourPolicy.classify(AttendanceType.CHECK_IN, in) == AttendanceFlag.LATE) {
+            } else if (workHourPolicy.classify(AttendanceType.CHECK_IN, in, holidays.keySet()) == AttendanceFlag.LATE) {
                 statuses.add(DailyStatus.LATE);
             }
 
             if (out == null) {
                 statuses.add(isToday ? DailyStatus.WORKING : DailyStatus.MISSING_CHECK_OUT);
             } else {
-                AttendanceFlag outFlag = workHourPolicy.classify(AttendanceType.CHECK_OUT, out);
+                AttendanceFlag outFlag = workHourPolicy.classify(AttendanceType.CHECK_OUT, out, holidays.keySet());
                 if (outFlag == AttendanceFlag.EARLY_LEAVE) statuses.add(DailyStatus.EARLY_LEAVE);
                 if (outFlag == AttendanceFlag.OVERTIME) statuses.add(DailyStatus.OVERTIME);
             }
@@ -132,14 +140,19 @@ public class DailyAttendanceService {
             }
         }
 
-        Long workMinutes = (in != null && out != null && out.isAfter(in))
-                ? Duration.between(in, out).toMinutes() : null;
-        return new DailyAttendanceDto(date, worker.getName(), worker.getEmployeeNo(), in, out, workMinutes, statuses);
+        Long workMinutes = null;
+        Long breakMinutes = null;
+        if (in != null && out != null && out.isAfter(in)) {
+            breakMinutes = workHourPolicy.breakMinutes(in, out);
+            workMinutes = Duration.between(in, out).toMinutes() - breakMinutes;
+        }
+        return new DailyAttendanceDto(date, worker.getName(), worker.getEmployeeNo(), in, out,
+                workMinutes, breakMinutes, holidayName, statuses);
     }
 
-    /** 평일이고, 그날 승인 상태인 기기를 가진 작업자만 기록이 없을 때 결근/미출근 행을 만든다 */
-    private boolean isExpectedToWork(Worker worker, LocalDate date, List<Device> devices) {
-        if (isWeekend(date)) {
+    /** 근무일(평일·비휴일)이고, 그날 승인 상태인 기기를 가진 작업자만 기록이 없을 때 결근/미출근 행을 만든다 */
+    private boolean isExpectedToWork(Worker worker, LocalDate date, List<Device> devices, Map<LocalDate, String> holidays) {
+        if (!workHourPolicy.isWorkday(date, holidays.keySet())) {
             return false;
         }
         return devices.stream()

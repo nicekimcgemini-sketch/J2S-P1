@@ -4,6 +4,7 @@ import com.j2s.attendance.config.SecurityConfig;
 import com.j2s.attendance.service.AttendanceService;
 import com.j2s.attendance.service.DailyAttendanceService;
 import com.j2s.attendance.service.DeviceService;
+import com.j2s.attendance.service.HolidayService;
 import com.j2s.attendance.service.IpWhitelistService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,8 @@ class AdminAuthControllerTest {
     private AttendanceService attendanceService;
     @MockBean
     private DailyAttendanceService dailyAttendanceService;
+    @MockBean
+    private HolidayService holidayService;
 
     private MockHttpSession login() throws Exception {
         return (MockHttpSession) mockMvc.perform(post("/api/admin/login")

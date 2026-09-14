@@ -27,6 +27,7 @@ public class AttendanceService {
     private final DeviceRepository deviceRepository;
     private final QrService qrService;
     private final WorkHourPolicy workHourPolicy;
+    private final HolidayService holidayService;
 
     @Transactional
     public AttendanceLog checkIn(AttendanceRequestDto dto) {
@@ -91,8 +92,9 @@ public class AttendanceService {
         String normalizedName = (name == null || name.isBlank()) ? null : name.trim();
 
         List<AttendanceLog> logs = attendanceLogRepository.search(start, end, normalizedEmployeeNo, normalizedName);
+        var holidays = holidayService.getHolidayNames(startDate, endDate).keySet();
         return logs.stream()
-                .map(l -> AttendanceLogDto.from(l, workHourPolicy.classify(l.getType(), l.getCheckedAt())))
+                .map(l -> AttendanceLogDto.from(l, workHourPolicy.classify(l.getType(), l.getCheckedAt(), holidays)))
                 .toList();
     }
 
