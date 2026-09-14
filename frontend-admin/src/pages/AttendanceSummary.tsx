@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { endOfMonth, format, parseISO, startOfMonth, subDays, subMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Search } from 'lucide-react';
-import { attendanceApi, DailyAttendance, DailyStatus } from '../services/api';
+import { attendanceApi, DailyAttendance, DailyStatus, holidayApi } from '../services/api';
 import { AlertBanner, Button, LoadingRow, PageHeader, Panel, inputClass } from '../components/dashboard';
 import { aggregateWorkerStats, formatHours, WorkerStatsCharts } from '../components/WorkerStatsCharts';
+import { AttendanceHeatmap } from '../components/AttendanceHeatmap';
 
 const STATUS_LABEL: Record<DailyStatus, string> = {
   NORMAL: '정상',
@@ -60,17 +61,29 @@ export default function AttendanceSummary() {
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
+  // 마지막으로 조회한 기간과 그 기간의 휴일 (입력칸만 바꾸고 조회하지 않았을 때 히트맵이 흔들리지 않게 따로 둔다)
+  const [loadedRange, setLoadedRange] = useState({ startDate, endDate });
+  const [holidays, setHolidays] = useState<Map<string, string>>(new Map());
 
   const load = async (range?: { startDate: string; endDate: string }) => {
     const query = range ?? { startDate, endDate };
     setLoading(true);
     setError('');
     try {
-      setRows(await attendanceApi.getDailySummary({
-        ...query,
-        employeeNo: employeeNo.trim() || undefined,
-        name: name.trim() || undefined,
-      }));
+      const startYear = Number(query.startDate.slice(0, 4));
+      const endYear = Number(query.endDate.slice(0, 4));
+      const years = Array.from({ length: Math.max(1, endYear - startYear + 1) }, (_, i) => startYear + i);
+      const [daily, ...holidayLists] = await Promise.all([
+        attendanceApi.getDailySummary({
+          ...query,
+          employeeNo: employeeNo.trim() || undefined,
+          name: name.trim() || undefined,
+        }),
+        ...years.map(y => holidayApi.getAll(y)),
+      ]);
+      setRows(daily);
+      setHolidays(new Map(holidayLists.flat().map(h => [h.date, h.name])));
+      setLoadedRange(query);
       setLoaded(true);
     } catch (err: any) {
       setError(err?.response?.data?.message || '조회에 실패했습니다.');
@@ -140,6 +153,15 @@ export default function AttendanceSummary() {
         // 다시 조회하는 동안에는 이전 결과를 흐리게 유지한다 (레이아웃 흔들림 방지)
         <div className={`flex flex-col gap-5 transition-opacity ${loading ? 'opacity-50' : ''}`}>
           <WorkerStatsCharts stats={stats} />
+
+          <Panel title="일별·직원별 근태 현황" padded>
+            <AttendanceHeatmap
+              rows={rows}
+              startDate={loadedRange.startDate}
+              endDate={loadedRange.endDate}
+              holidays={holidays}
+            />
+          </Panel>
 
           <Panel title="직원별 통계표">
             <div className="overflow-x-auto">
