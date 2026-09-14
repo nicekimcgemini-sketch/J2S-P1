@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Activity, LogIn } from 'lucide-react';
 import { authApi } from '../services/api';
 import { AlertBanner, Button, inputClass } from '../components/dashboard';
@@ -11,14 +11,15 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const expired = (useLocation().state as { expired?: boolean } | null)?.expired === true;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const ok = await authApi.login(username, password);
+    const session = await authApi.login(username, password);
     setLoading(false);
-    if (ok) {
+    if (session) {
       navigate('/admin/devices', { replace: true });
     } else {
       setError('아이디 또는 비밀번호가 올바르지 않습니다.');
@@ -37,6 +38,12 @@ export default function Login() {
           출퇴근 모니터링
         </div>
         <h2 className="mb-1 font-display text-xl font-bold text-slate-900">관리자 로그인</h2>
+
+        {expired && !error && (
+          <p className="rounded-xl bg-amber-50 px-3.5 py-2.5 text-[13px] text-amber-700">
+            일정 시간 동안 활동이 없어 자동 로그아웃되었습니다. 다시 로그인해 주세요.
+          </p>
+        )}
 
         <input
           className={inputClass}

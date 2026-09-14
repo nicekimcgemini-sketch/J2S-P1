@@ -11,7 +11,7 @@
 | `frontend-admin/` | React 18 · Vite 5 · TypeScript | `/qr` 현장 QR 화면(공개), `/checkin` 모바일 웹 체크인, `/admin/**` 관리자 콘솔(로그인) |
 | `scripts/` | PowerShell / Bash / Node | 검증 하네스 (`check.ps1`, `check.sh`, `hooks/`) |
 
-배포: Cloud Build → Cloud Run (`backend/cloudbuild.yaml`, `frontend-admin/cloudbuild.yaml`, region asia-northeast3, GCP 프로젝트 `j2s-p1-attendance`). `main` 푸시 시 자동 배포되므로 **main에 올리기 전에 반드시 검증 스크립트를 통과**시킨다.
+배포: Cloud Build → Cloud Run (`backend/cloudbuild.yaml`, `frontend-admin/cloudbuild.yaml`, region asia-northeast3, GCP 프로젝트 `j2s-p1-attendance`). 프론트 컨테이너는 nginx 로 정적 파일을 서빙하면서 `/api/admin/**` 를 `BACKEND_ORIGIN`(Dockerfile 기본값 = 백엔드 URL)으로 프록시한다. `main` 푸시 시 자동 배포되므로 **main에 올리기 전에 반드시 검증 스크립트를 통과**시킨다.
 
 | 서비스 | 배포 URL |
 |---|---|
@@ -49,7 +49,7 @@ cd frontend-admin; npm run dev                    # http://localhost:5173
 3. **기기 승인** — `Device.status` PENDING → APPROVED → REVOKED. 출퇴근 API는 `APPROVED` 기기만 통과(`AttendanceService.validateDevice`: 미등록 401, 미승인 403).
 4. **최초 등록 = 작업자 자가 생성** — `POST /api/devices/register` 는 사번(`^S\d{5}$`)이 없으면 이름과 함께 `Worker` 를 생성한다. 같은 사번에 PENDING/APPROVED 기기가 있으면 409.
 5. **출퇴근은 각각 하루 1회** — `hasCheckedInToday`/`hasCheckedOutToday` 로 중복 출근·퇴근 모두 409. 모바일 체크인 화면은 당일 처리 완료된 항목의 버튼을 숨긴다.
-6. **관리자 인증** — HTTP Basic, `SecurityConfig` 의 인메모리 `admin` 계정(운영 전 DB 기반으로 교체 예정 TODO). `/api/admin/**` 만 `ROLE_ADMIN`, 나머지 `/api/**` 는 permitAll 이고 기기ID/IP로 방어.
+6. **관리자 인증** — 서버 세션. `POST /api/admin/login` 이 `SecurityConfig` 의 인메모리 `admin` 계정(운영 전 DB 기반으로 교체 예정 TODO)을 검증하고 세션(쿠키 `J2S_ADMIN_SESSION`, HttpOnly·SameSite=Strict, 운영은 Secure)에 인증 정보를 저장한다. 세션은 Spring Session JDBC 로 DB(`spring_session`, `spring_session_attributes` — 기동 시 `session/schema-postgresql.sql` 로 자동 생성, RLS 켜짐)에 두어 Cloud Run 인스턴스가 여러 개(maxScale 12)여도 유지된다. 유휴 만료는 `server.servlet.session.timeout`(기본 10분, `ADMIN_SESSION_TIMEOUT`) — 관리자 API 요청이 있어야만 연장되며, 프론트 헤더의 카운트다운이 0이 되거나 401 을 받으면 로그인 화면으로 보낸다. HTTP Basic 은 제거됨(되살리면 401 에 `WWW-Authenticate` 가 붙어 브라우저 기본 로그인 창이 뜬다). 쿠키가 서드파티로 차단되지 않도록 **관리자 API 는 프론트와 같은 출처 `/api/admin` 으로 호출**하고 프론트 nginx(`frontend-admin/nginx.conf.template`, 로컬은 `vite.config.ts` proxy)가 백엔드로 넘긴다 — 공개 API(QR·체크인)는 IP 화이트리스트가 클라이언트 IP 에 의존하므로 프록시하지 말고 백엔드로 직접 호출한다. `/api/admin/**` 만 `ROLE_ADMIN`, 나머지 `/api/**` 는 permitAll 이고 기기ID/IP로 방어.
 7. **시간대** — 서버는 `Asia/Seoul` 고정(Dockerfile `-Duser.timezone`). 날짜 경계 계산(`LocalDate.now()`)은 이 전제를 따른다.
 
 ## API 요약
@@ -61,7 +61,9 @@ cd frontend-admin; npm run dev                    # http://localhost:5173
 | `POST /api/devices/register` | 없음 | 201, `DeviceRegisterDto` 검증 |
 | `GET /api/devices/status?hardwareId=` | 없음 | `{status, workerName, checkedInToday, checkInAt, checkOutAt}` / `NOT_REGISTERED` — `checkInAt`/`checkOutAt`은 당일 최신 기록, 없으면 `null` |
 | `POST /api/attendance/check-in`, `check-out` | 없음(기기ID 검증) | `{qrToken, hardwareId}` |
-| `GET /api/admin/me` | ADMIN | 로그인 확인 |
+| `POST /api/admin/login` | 없음 | `{username, password}` → 200 `{username, sessionTimeoutSeconds}` + 세션 쿠키, 실패 401 |
+| `POST /api/admin/logout` | 세션 | 204, 세션 무효화 |
+| `GET /api/admin/me` | ADMIN | 세션 확인 `{username, sessionTimeoutSeconds}`, 만료 시 401 |
 | `GET /api/admin/devices`, `/devices/pending` | ADMIN | |
 | `PATCH /api/admin/devices/{id}/status?status=` | ADMIN | APPROVED / REVOKED |
 | `DELETE /api/admin/devices/{id}` | ADMIN | 출퇴근 기록이 있어도 삭제 가능. 기록은 보존하고 `attendance_logs.device_id` 만 null 처리 |
@@ -75,7 +77,7 @@ cd frontend-admin; npm run dev                    # http://localhost:5173
 
 - **백엔드**: Lombok(`@RequiredArgsConstructor`, `@Getter/@Setter`, `@Builder`) 사용. 오류는 `ResponseStatusException` 으로 HTTP 상태와 한국어 메시지를 함께 던진다. `@Valid` 실패 메시지는 `GlobalExceptionHandler` 가 그대로 노출한다. 엔티티 직렬화 순환(`Worker.devices` 는 `@JsonIgnore`)을 깨지 말 것. 새 조회 API는 LAZY 연관을 `JOIN FETCH` 로 미리 가져온다(`findAllWithWorker` 패턴).
 - **DB 스키마**: `ddl-auto: update` 에 의존한다. 컬럼 추가는 nullable 로 시작하고, 이름 변경/삭제는 Supabase 콘솔에서 수동 마이그레이션이 필요하므로 반드시 사용자에게 알린다.
-- **프론트**: 스타일링은 Tailwind CSS v4(`@tailwindcss/vite` 플러그인, `src/index.css` 의 `@theme` 블록에 `brand` 색상/폰트 토큰 정의)로 전면 전환했다. 클래스 기반 CSS 파일(`theme.css`)은 삭제됨 — 새 UI는 전부 Tailwind 유틸리티 클래스로 작성한다. 반복되는 패턴(통계 카드, 상태 배지, 패널, 버튼, 입력 필드)은 `src/components/dashboard.tsx` 의 공용 컴포넌트를 재사용한다. 아이콘은 `lucide-react`. 라이트 "가을" 톤(`etc/design1.png`의 1번째 컨셉 "단풍 출근부" 참고)으로 통일했으니 새 화면도 이 톤을 따른다 — `index.css`에서 기본 `slate` 팔레트를 크림/베이지 계열 라이트 톤으로 오버라이드(50이 가장 밝음, 950이 가장 어두움 — Tailwind 기본 방향 그대로)했고 `brand`는 호박/단풍빛 오렌지 액센트, 상태색은 에메랄드/앰버/로즈를 라이트 배경에 맞게 `-600`대 위주로 쓴다. 배경은 `bg-slate-100`(크림), 카드는 `bg-white`(또는 `bg-slate-50`) + `rounded-2xl`/`rounded-3xl` + `shadow-sm shadow-slate-900/5` + `border-slate-200`가 기본이며, 다크 테마 시절의 `border-white/…`, `backdrop-blur`, `bg-slate-900` 같은 클래스가 새로 섞여 들어가지 않도록 주의한다. `CheckIn.tsx`의 출근/퇴근 버튼처럼 이 앱의 핵심 액션은 참고 디자인처럼 큰 원형(`rounded-full`, h-40 w-40급) CTA로 강조한다. `font-display`는 현재 `font-sans`(Pretendard)와 동일하게 맞춰져 있다(참고 디자인에 세리프가 없음) — 제목은 `font-bold`로 굵기 차이만 준다. 데이터 테이블 화면(기기 관리 등)에서는 같은 숫자를 중복 표시하는 `StatRow`/`StatTile` 4칸 카드 그리드를 남발하지 말 것 — `DeviceManagement.tsx`처럼 카운트를 필터 탭 라벨에 붙이고 `PageHeader`의 `sub`에 요약을 한 줄로 녹이는 쪽이 더 정제돼 보인다. 행마다 반복되는 작업 버튼도 색깔 있는 필 버튼을 여러 개 늘어놓기보다 아이콘 전용 고스트 버튼(`title` 툴팁)로 줄이고, 이름+사번처럼 성격이 같은 두 값은 별도 컬럼 대신 한 셀에 주/부 텍스트로 묶어 컬럼 수를 줄인다. 상태는 컴포넌트 로컬 `useState`, 전역 상태 라이브러리 없음. 관리자 인증 토큰은 `sessionStorage` 의 `admin_auth`.
+- **프론트**: 스타일링은 Tailwind CSS v4(`@tailwindcss/vite` 플러그인, `src/index.css` 의 `@theme` 블록에 `brand` 색상/폰트 토큰 정의)로 전면 전환했다. 클래스 기반 CSS 파일(`theme.css`)은 삭제됨 — 새 UI는 전부 Tailwind 유틸리티 클래스로 작성한다. 반복되는 패턴(통계 카드, 상태 배지, 패널, 버튼, 입력 필드)은 `src/components/dashboard.tsx` 의 공용 컴포넌트를 재사용한다. 아이콘은 `lucide-react`. 라이트 "가을" 톤(`etc/design1.png`의 1번째 컨셉 "단풍 출근부" 참고)으로 통일했으니 새 화면도 이 톤을 따른다 — `index.css`에서 기본 `slate` 팔레트를 크림/베이지 계열 라이트 톤으로 오버라이드(50이 가장 밝음, 950이 가장 어두움 — Tailwind 기본 방향 그대로)했고 `brand`는 호박/단풍빛 오렌지 액센트, 상태색은 에메랄드/앰버/로즈를 라이트 배경에 맞게 `-600`대 위주로 쓴다. 배경은 `bg-slate-100`(크림), 카드는 `bg-white`(또는 `bg-slate-50`) + `rounded-2xl`/`rounded-3xl` + `shadow-sm shadow-slate-900/5` + `border-slate-200`가 기본이며, 다크 테마 시절의 `border-white/…`, `backdrop-blur`, `bg-slate-900` 같은 클래스가 새로 섞여 들어가지 않도록 주의한다. `CheckIn.tsx`의 출근/퇴근 버튼처럼 이 앱의 핵심 액션은 참고 디자인처럼 큰 원형(`rounded-full`, h-40 w-40급) CTA로 강조한다. `font-display`는 현재 `font-sans`(Pretendard)와 동일하게 맞춰져 있다(참고 디자인에 세리프가 없음) — 제목은 `font-bold`로 굵기 차이만 준다. 데이터 테이블 화면(기기 관리 등)에서는 같은 숫자를 중복 표시하는 `StatRow`/`StatTile` 4칸 카드 그리드를 남발하지 말 것 — `DeviceManagement.tsx`처럼 카운트를 필터 탭 라벨에 붙이고 `PageHeader`의 `sub`에 요약을 한 줄로 녹이는 쪽이 더 정제돼 보인다. 행마다 반복되는 작업 버튼도 색깔 있는 필 버튼을 여러 개 늘어놓기보다 아이콘 전용 고스트 버튼(`title` 툴팁)로 줄이고, 이름+사번처럼 성격이 같은 두 값은 별도 컬럼 대신 한 셀에 주/부 텍스트로 묶어 컬럼 수를 줄인다. 상태는 컴포넌트 로컬 `useState`, 전역 상태 라이브러리 없음. 관리자 인증은 서버 세션 쿠키라 브라우저 저장소에 토큰을 두지 않는다(`api.ts` 의 `adminHttp` 가 `/api/admin` 호출 전담, 401 시 `admin-session-expired` 이벤트).
 - **비밀값**: 루트 `.env`, `frontend-admin/.env` 는 절대 읽거나 커밋하지 않는다(훅이 차단). 예시는 `.env.example` 에만 추가한다. `SecurityConfig` 의 `admin1234` 는 개발용 기본값이며, 운영 값은 환경변수로 뺀다.
 
 ## 작업 완료 기준 (Definition of Done)

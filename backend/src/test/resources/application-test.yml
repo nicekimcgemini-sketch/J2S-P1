@@ -13,6 +13,11 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
+  session:
+    jdbc:
+      # 운영용 스키마(PostgreSQL 전용 RLS 구문 포함) 대신 Spring Session 기본 H2 스키마를 쓴다
+      initialize-schema: embedded
+      schema: classpath:org/springframework/session/jdbc/schema-@@platform@@.sql
 
 server:
   port: 0

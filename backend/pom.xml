@@ -44,6 +44,11 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
+    <!-- 관리자 로그인 세션을 DB에 저장해 Cloud Run 인스턴스가 여러 개여도 세션이 유지되게 한다 -->
+    <dependency>
+      <groupId>org.springframework.session</groupId>
+      <artifactId>spring-session-jdbc</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>

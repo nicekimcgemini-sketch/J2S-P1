@@ -29,12 +29,6 @@ public class AdminController {
     private final AttendanceService attendanceService;
     private final IpWhitelistService ipWhitelistService;
 
-    // 로그인 확인용 (프론트에서 계정/비번 검증 목적으로 호출)
-    @GetMapping("/me")
-    public ResponseEntity<Void> me() {
-        return ResponseEntity.ok().build();
-    }
-
     // 허용 IP 목록 조회
     @GetMapping("/ip-whitelist")
     public ResponseEntity<List<IpWhitelist>> getIpWhitelist() {

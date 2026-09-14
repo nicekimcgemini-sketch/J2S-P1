@@ -1,0 +1,25 @@
+# nginx 공식 이미지가 기동 시 envsubst 로 ${PORT}, ${BACKEND_ORIGIN}, ${NGINX_LOCAL_RESOLVERS} 를 치환한다.
+server {
+    listen ${PORT};
+    root /usr/share/nginx/html;
+
+    # 관리자 API 는 세션 쿠키(J2S_ADMIN_SESSION)를 쓰므로 프론트와 같은 출처에서 백엔드로 넘긴다.
+    # 프론트/백엔드 도메인이 다르면 쿠키가 서드파티 쿠키로 취급돼 Safari·시크릿 창에서 차단된다.
+    # 공개 API(QR·체크인)는 IP 화이트리스트가 클라이언트 IP 에 의존하므로 프록시하지 않고 백엔드로 직접 호출한다.
+    location /api/admin/ {
+        resolver ${NGINX_LOCAL_RESOLVERS} valid=300s ipv6=off;
+        set $backend ${BACKEND_ORIGIN};
+        proxy_pass $backend;
+        proxy_ssl_server_name on;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

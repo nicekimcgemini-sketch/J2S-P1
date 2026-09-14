@@ -16,11 +16,25 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+  session:
+    jdbc:
+      # 관리자 세션 저장소. 테이블이 없으면 기동 시 만든다 (RLS 포함, session/schema-postgresql.sql)
+      initialize-schema: always
+      schema: classpath:session/schema-postgresql.sql
 
 server:
   port: ${PORT:8080}
   error:
     include-message: always
+  servlet:
+    session:
+      # 관리자 세션 유휴 만료 시간. 마지막 관리자 API 요청 이후 이 시간이 지나면 자동 로그아웃
+      timeout: ${ADMIN_SESSION_TIMEOUT:10m}
+      cookie:
+        name: J2S_ADMIN_SESSION
+        http-only: true
+        same-site: strict
+        secure: ${SESSION_COOKIE_SECURE:false}   # 운영(HTTPS)에서는 true (backend/cloudbuild.yaml)
 
 app:
   qr:

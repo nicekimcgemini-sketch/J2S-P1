@@ -1,19 +1,85 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate, Outlet, useNavigate } from 'react-router-dom';
-import { Activity, BarChart3, Clock, LogOut, ShieldCheck, Smartphone } from 'lucide-react';
+import { Activity, BarChart3, Clock, LogOut, RotateCw, ShieldCheck, Smartphone } from 'lucide-react';
 import QrScreen from './pages/QrScreen';
 import CheckIn from './pages/CheckIn';
 import DeviceManagement from './pages/DeviceManagement';
 import AttendanceLogs from './pages/AttendanceLogs';
 import IpWhitelist from './pages/IpWhitelist';
 import Login from './pages/Login';
-import { authApi } from './services/api';
+import {
+  ADMIN_SESSION_EXPIRED_EVENT,
+  authApi,
+  getLastAdminActivityAt,
+  type AdminSession,
+} from './services/api';
 
 function RequireAdmin() {
-  if (!authApi.isLoggedIn()) {
+  // undefined = 서버 세션 확인 중
+  const [session, setSession] = useState<AdminSession | null>();
+
+  useEffect(() => {
+    authApi.me().then(setSession);
+  }, []);
+
+  if (session === undefined) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 text-sm text-slate-500">
+        세션 확인 중...
+      </div>
+    );
+  }
+  if (!session) {
     return <Navigate to="/admin/login" replace />;
   }
-  return <AdminLayout />;
+  return <AdminLayout session={session} />;
+}
+
+/**
+ * 서버 세션 유휴 만료까지 남은 시간. 서버 세션은 관리자 API 요청이 있을 때만 연장되므로
+ * 마지막 요청 성공 시각을 기준으로 계산하고, 0이 되면 서버에 한 번 더 확인한 뒤 만료 처리한다.
+ */
+function SessionCountdown({ timeoutSeconds, onExpired }: { timeoutSeconds: number; onExpired: () => void }) {
+  const [remaining, setRemaining] = useState(timeoutSeconds);
+  const checking = useRef(false);
+
+  const verify = useCallback(async () => {
+    if (checking.current) return;
+    checking.current = true;
+    // 다른 탭에서 관리자 화면을 쓰고 있었다면 세션이 연장돼 있을 수 있다
+    const session = await authApi.me();
+    checking.current = false;
+    if (!session) onExpired();
+  }, [onExpired]);
+
+  useEffect(() => {
+    const tick = () => {
+      const left = Math.ceil((getLastAdminActivityAt() + timeoutSeconds * 1000 - Date.now()) / 1000);
+      setRemaining(Math.max(0, left));
+      if (left <= 0) verify();
+    };
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, [timeoutSeconds, verify]);
+
+  const mm = String(Math.floor(remaining / 60)).padStart(2, '0');
+  const ss = String(remaining % 60).padStart(2, '0');
+
+  return (
+    <button
+      type="button"
+      onClick={verify}
+      title="클릭하면 세션을 연장합니다"
+      className={[
+        'flex items-center gap-1.5 rounded-lg px-2 py-1 font-mono tabular text-xs transition-colors hover:bg-slate-100',
+        remaining <= 60 ? 'text-amber-600' : 'text-slate-500',
+      ].join(' ')}
+    >
+      <RotateCw className="h-3.5 w-3.5" strokeWidth={2} />
+      자동 로그아웃 {mm}:{ss}
+    </button>
+  );
 }
 
 function LiveDot() {
@@ -45,13 +111,23 @@ const navItems = [
   { to: '/admin/ip-whitelist', label: '허용 IP 관리', icon: ShieldCheck, section: '설정' },
 ] as const;
 
-function AdminLayout() {
+function AdminLayout({ session }: { session: AdminSession }) {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    authApi.logout();
+  const handleLogout = async () => {
+    await authApi.logout();
     navigate('/admin/login', { replace: true });
   };
+
+  const handleExpired = useCallback(() => {
+    navigate('/admin/login', { replace: true, state: { expired: true } });
+  }, [navigate]);
+
+  // 어느 관리자 API든 401 을 받으면 세션이 만료된 것이다
+  useEffect(() => {
+    window.addEventListener(ADMIN_SESSION_EXPIRED_EVENT, handleExpired);
+    return () => window.removeEventListener(ADMIN_SESSION_EXPIRED_EVENT, handleExpired);
+  }, [handleExpired]);
 
   let lastSection = '';
 
@@ -109,7 +185,10 @@ function AdminLayout() {
             <LiveDot />
             J2S-P1 · Attendance Ops Console
           </span>
-          <Clock24 />
+          <div className="flex items-center gap-3">
+            <SessionCountdown timeoutSeconds={session.sessionTimeoutSeconds} onExpired={handleExpired} />
+            <Clock24 />
+          </div>
         </header>
         <Outlet />
       </div>
