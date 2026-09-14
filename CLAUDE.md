@@ -75,6 +75,7 @@ cd frontend-admin; npm run dev                    # http://localhost:5173
 | `GET/POST/DELETE /api/admin/ip-whitelist[/{id}]` | ADMIN | |
 | `GET /api/admin/attendance/logs?startDate=&endDate=&employeeNo=&name=` | ADMIN | 모두 생략 가능(생략 시 오늘 하루). `employeeNo` 는 정확히 일치, `name` 은 부분 일치(대소문자 무시). 각 기록의 `flag` 는 `LATE`/`EARLY_LEAVE`/`OVERTIME`/`null` — `WorkHourPolicy` 가 조회 시 계산(DB 미저장), 기준은 `app.work-hours.*`(기본 평일 09:00 / 18:00 / 19:00 이후 야근, 분 단위 비교, 주말은 판정 안 함) |
 | `DELETE /api/admin/attendance/logs/{id}` | ADMIN | 출퇴근 기록 1건 삭제 |
+| `GET /api/admin/attendance/daily?startDate=&endDate=&employeeNo=&name=` | ADMIN | 일별 근태 요약(작업자 × 날짜, 기본 이번 달 1일~오늘, 최대 1년, 미래 날짜 제외). `{date, workerName, employeeNo, checkInAt, checkOutAt, workMinutes, statuses[]}` — `DailyAttendanceService` 가 판정: NORMAL/LATE/EARLY_LEAVE/OVERTIME/ABSENT/MISSING_CHECK_IN/MISSING_CHECK_OUT/WORKING(오늘 근무 중)/NOT_YET(오늘 미출근)/WEEKEND_WORK. 결근 대상은 그날 승인 상태 기기를 가진 작업자(삭제된 기기는 알 수 없음). 관리자 화면 `/admin/summary`(근태 요약)가 이 응답으로 직원별 통계 그래프·통계표를 프론트에서 집계한다 |
 
 프론트의 타입/호출은 `frontend-admin/src/services/api.ts` 한 곳에 모여 있다. 백엔드 응답 형태를 바꾸면 이 파일의 인터페이스도 같이 고친다.
 

@@ -1,10 +1,12 @@
 package com.j2s.attendance.controller;
 
 import com.j2s.attendance.dto.AttendanceLogDto;
+import com.j2s.attendance.dto.DailyAttendanceDto;
 import com.j2s.attendance.entity.Device;
 import com.j2s.attendance.entity.DeviceStatus;
 import com.j2s.attendance.entity.IpWhitelist;
 import com.j2s.attendance.service.AttendanceService;
+import com.j2s.attendance.service.DailyAttendanceService;
 import com.j2s.attendance.service.DeviceService;
 import com.j2s.attendance.service.IpWhitelistService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ public class AdminController {
     private final DeviceService deviceService;
     private final AttendanceService attendanceService;
     private final IpWhitelistService ipWhitelistService;
+    private final DailyAttendanceService dailyAttendanceService;
 
     // 허용 IP 목록 조회
     @GetMapping("/ip-whitelist")
@@ -88,6 +91,19 @@ public class AdminController {
         LocalDate resolvedStart = startDate != null ? startDate : (endDate != null ? endDate : today);
         LocalDate resolvedEnd = endDate != null ? endDate : (startDate != null ? startDate : today);
         return ResponseEntity.ok(attendanceService.getLogs(resolvedStart, resolvedEnd, employeeNo, name));
+    }
+
+    // 일별 근태 요약 (작업자 × 날짜). 기간을 생략하면 이번 달 1일 ~ 오늘
+    @GetMapping("/attendance/daily")
+    public ResponseEntity<List<DailyAttendanceDto>> getDailySummary(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String employeeNo,
+            @RequestParam(required = false) String name) {
+        LocalDate today = LocalDate.now();
+        LocalDate resolvedStart = startDate != null ? startDate : today.withDayOfMonth(1);
+        LocalDate resolvedEnd = endDate != null ? endDate : today;
+        return ResponseEntity.ok(dailyAttendanceService.getDailySummary(resolvedStart, resolvedEnd, employeeNo, name));
     }
 
     // 출퇴근 기록 삭제
