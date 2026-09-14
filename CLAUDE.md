@@ -15,10 +15,15 @@
 
 | 서비스 | 배포 URL |
 |---|---|
+| **대표 주소** (Firebase Hosting 사이트 `j2sp1`) | **https://j2sp1.web.app** — 모든 경로를 `j2s-frontend` Cloud Run 으로 넘김 |
 | 백엔드 (`j2s-backend`) | https://j2s-backend-401796347608.asia-northeast3.run.app |
-| 프론트엔드 (`j2s-frontend`) | https://j2s-frontend-401796347608.asia-northeast3.run.app |
+| 프론트엔드 (`j2s-frontend`) | https://j2s-frontend-401796347608.asia-northeast3.run.app (기존 주소, 계속 동작) |
 
 (`gcloud run services list --region=asia-northeast3`로 최신 상태 재확인 가능)
+
+서울 리전은 Cloud Run 도메인 매핑을 지원하지 않아 Firebase Hosting(`firebase.json`) 을 앞단에 둔다. Hosting 설정은 앱 배포(Cloud Build)와 별개라 `firebase.json` 을 바꿨을 때만 `npx firebase-tools deploy --only hosting` 으로 반영한다. Firebase Hosting 은 이름이 `__session` 인 쿠키만 Cloud Run 으로 넘기므로 관리자 세션 쿠키 이름을 바꾸지 말 것. 새 프론트 주소를 추가하면 `backend/cloudbuild.yaml` 의 `CORS_ALLOWED_ORIGINS` 에도 넣는다(QR·체크인 화면이 백엔드를 직접 호출).
+
+**⚠️ 결제 계정 해제 금지**: Firebase 콘솔에서 요금제를 Spark 로 내리면 GCP 프로젝트의 결제 계정 연결이 끊겨 Cloud Run·Cloud Build 가 즉시 중단된다(2026-09-14 실제 장애 — 재연결 후에도 서비스별 복구에 시간이 걸림). 이 구성은 Blaze(종량제, 무료 사용량 내 사용)가 필수다.
 
 ## 명령어
 
@@ -49,7 +54,7 @@ cd frontend-admin; npm run dev                    # http://localhost:5173
 3. **기기 승인** — `Device.status` PENDING → APPROVED → REVOKED. 출퇴근 API는 `APPROVED` 기기만 통과(`AttendanceService.validateDevice`: 미등록 401, 미승인 403).
 4. **최초 등록 = 작업자 자가 생성** — `POST /api/devices/register` 는 사번(`^S\d{5}$`)이 없으면 이름과 함께 `Worker` 를 생성한다. 같은 사번에 PENDING/APPROVED 기기가 있으면 409.
 5. **출퇴근은 각각 하루 1회** — `hasCheckedInToday`/`hasCheckedOutToday` 로 중복 출근·퇴근 모두 409. 모바일 체크인 화면은 당일 처리 완료된 항목의 버튼을 숨긴다.
-6. **관리자 인증** — 서버 세션. `POST /api/admin/login` 이 `SecurityConfig` 의 인메모리 `admin` 계정(운영 전 DB 기반으로 교체 예정 TODO)을 검증하고 세션(쿠키 `J2S_ADMIN_SESSION`, HttpOnly·SameSite=Strict, 운영은 Secure)에 인증 정보를 저장한다. 세션은 Spring Session JDBC 로 DB(`spring_session`, `spring_session_attributes` — 기동 시 `session/schema-postgresql.sql` 로 자동 생성, RLS 켜짐)에 두어 Cloud Run 인스턴스가 여러 개(maxScale 12)여도 유지된다. 유휴 만료는 `server.servlet.session.timeout`(기본 10분, `ADMIN_SESSION_TIMEOUT`) — 관리자 API 요청이 있어야만 연장되며, 프론트 헤더의 카운트다운이 0이 되거나 401 을 받으면 로그인 화면으로 보낸다. HTTP Basic 은 제거됨(되살리면 401 에 `WWW-Authenticate` 가 붙어 브라우저 기본 로그인 창이 뜬다). 쿠키가 서드파티로 차단되지 않도록 **관리자 API 는 프론트와 같은 출처 `/api/admin` 으로 호출**하고 프론트 nginx(`frontend-admin/nginx.conf.template`, 로컬은 `vite.config.ts` proxy)가 백엔드로 넘긴다 — 공개 API(QR·체크인)는 IP 화이트리스트가 클라이언트 IP 에 의존하므로 프록시하지 말고 백엔드로 직접 호출한다. `/api/admin/**` 만 `ROLE_ADMIN`, 나머지 `/api/**` 는 permitAll 이고 기기ID/IP로 방어.
+6. **관리자 인증** — 서버 세션. `POST /api/admin/login` 이 `SecurityConfig` 의 인메모리 `admin` 계정(운영 전 DB 기반으로 교체 예정 TODO)을 검증하고 세션(쿠키 `__session` — Firebase Hosting 이 이 이름만 전달하므로 변경 금지, HttpOnly·SameSite=Strict, 운영은 Secure)에 인증 정보를 저장한다. 세션은 Spring Session JDBC 로 DB(`spring_session`, `spring_session_attributes` — 기동 시 `session/schema-postgresql.sql` 로 자동 생성, RLS 켜짐)에 두어 Cloud Run 인스턴스가 여러 개(maxScale 12)여도 유지된다. 유휴 만료는 `server.servlet.session.timeout`(기본 10분, `ADMIN_SESSION_TIMEOUT`) — 관리자 API 요청이 있어야만 연장되며, 프론트 헤더의 카운트다운이 0이 되거나 401 을 받으면 로그인 화면으로 보낸다. HTTP Basic 은 제거됨(되살리면 401 에 `WWW-Authenticate` 가 붙어 브라우저 기본 로그인 창이 뜬다). 쿠키가 서드파티로 차단되지 않도록 **관리자 API 는 프론트와 같은 출처 `/api/admin` 으로 호출**하고 프론트 nginx(`frontend-admin/nginx.conf.template`, 로컬은 `vite.config.ts` proxy)가 백엔드로 넘긴다 — 공개 API(QR·체크인)는 IP 화이트리스트가 클라이언트 IP 에 의존하므로 프록시하지 말고 백엔드로 직접 호출한다. `/api/admin/**` 만 `ROLE_ADMIN`, 나머지 `/api/**` 는 permitAll 이고 기기ID/IP로 방어.
 7. **시간대** — 서버는 `Asia/Seoul` 고정(Dockerfile `-Duser.timezone`). 날짜 경계 계산(`LocalDate.now()`)은 이 전제를 따른다.
 
 ## API 요약

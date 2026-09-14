@@ -3,7 +3,7 @@ server {
     listen ${PORT};
     root /usr/share/nginx/html;
 
-    # 관리자 API 는 세션 쿠키(J2S_ADMIN_SESSION)를 쓰므로 프론트와 같은 출처에서 백엔드로 넘긴다.
+    # 관리자 API 는 세션 쿠키(__session)를 쓰므로 프론트와 같은 출처에서 백엔드로 넘긴다.
     # 프론트/백엔드 도메인이 다르면 쿠키가 서드파티 쿠키로 취급돼 Safari·시크릿 창에서 차단된다.
     # 공개 API(QR·체크인)는 IP 화이트리스트가 클라이언트 IP 에 의존하므로 프록시하지 않고 백엔드로 직접 호출한다.
     location /api/admin/ {

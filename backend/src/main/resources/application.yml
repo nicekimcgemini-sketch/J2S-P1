@@ -31,7 +31,8 @@ server:
       # 관리자 세션 유휴 만료 시간. 마지막 관리자 API 요청 이후 이 시간이 지나면 자동 로그아웃
       timeout: ${ADMIN_SESSION_TIMEOUT:10m}
       cookie:
-        name: J2S_ADMIN_SESSION
+        # Firebase Hosting(j2sp1.web.app)은 이름이 __session 인 쿠키만 Cloud Run 으로 넘기므로 이 이름을 바꾸면 안 된다
+        name: __session
         http-only: true
         same-site: strict
         secure: ${SESSION_COOKIE_SECURE:false}   # 운영(HTTPS)에서는 true (backend/cloudbuild.yaml)

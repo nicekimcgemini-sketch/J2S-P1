@@ -30,7 +30,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 /**
  * 관리자 인증은 서버 세션 기반이다.
- * POST /api/admin/login 으로 로그인하면 세션(Spring Session JDBC, 쿠키 J2S_ADMIN_SESSION)에 인증 정보가 저장되고,
+ * POST /api/admin/login 으로 로그인하면 세션(Spring Session JDBC, 쿠키 __session)에 인증 정보가 저장되고,
  * server.servlet.session.timeout(기본 10분) 동안 관리자 API 요청이 없으면 세션이 만료돼 자동 로그아웃된다.
  */
 @Configuration

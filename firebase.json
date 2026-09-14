@@ -1,0 +1,15 @@
+{
+  "hosting": {
+    "site": "j2sp1",
+    "public": "firebase/public",
+    "rewrites": [
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "j2s-frontend",
+          "region": "asia-northeast3"
+        }
+      }
+    ]
+  }
+}

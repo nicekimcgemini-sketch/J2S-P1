@@ -18,8 +18,9 @@ steps:
       - j2s-backend
       - '--image=asia-northeast3-docker.pkg.dev/j2s-p1-attendance/cloud-run-source-deploy/j2s-backend'
       - '--region=asia-northeast3'
-      # 관리자 세션 쿠키에 Secure 속성 부여 (HTTPS 전용)
-      - '--update-env-vars=SESSION_COOKIE_SECURE=true'
+      # SESSION_COOKIE_SECURE: 관리자 세션 쿠키에 Secure 속성 부여 (HTTPS 전용)
+      # CORS_ALLOWED_ORIGINS: 대표 주소 j2sp1.web.app(Firebase Hosting) + 기존 run.app 주소 + 로컬 개발. 값에 쉼표가 있어 구분자를 @ 로 지정
+      - '--update-env-vars=^@^SESSION_COOKIE_SECURE=true@CORS_ALLOWED_ORIGINS=https://j2sp1.web.app,https://j2sp1.firebaseapp.com,https://j2s-frontend-401796347608.asia-northeast3.run.app,http://localhost:5173'
       - '--quiet'
 images:
   - 'asia-northeast3-docker.pkg.dev/j2s-p1-attendance/cloud-run-source-deploy/j2s-backend'
