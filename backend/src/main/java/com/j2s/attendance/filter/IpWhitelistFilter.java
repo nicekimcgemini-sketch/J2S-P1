@@ -39,6 +39,10 @@ public class IpWhitelistFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         if (request.getRequestURI().startsWith("/api/qr")) {
             String clientIp = extractClientIp(request);
+            // TEMP(IP 우회 수정 사전 조사): Cloud Run 이 X-Forwarded-For 를 어떤 형식으로 넘기는지 확인 후 제거
+            if (request.getHeader("X-Debug-Xff") != null) {
+                log.info("XFF-PROBE xff=[{}] remoteAddr={}", request.getHeader("X-Forwarded-For"), request.getRemoteAddr());
+            }
             if (!ipWhitelistService.isAllowed(clientIp)) {
                 log.warn("허용되지 않은 IP에서 QR 접근 시도: {}", clientIp);
                 // QR 화면이 오류 화면에 이 PC 의 IP 를 보여줘 관리자가 허용 IP 로 등록할 수 있게 한다
