@@ -39,10 +39,6 @@ public class IpWhitelistFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         if (request.getRequestURI().startsWith("/api/qr")) {
             String clientIp = extractClientIp(request);
-            // TEMP(IP 우회 수정 사전 조사): Cloud Run 이 X-Forwarded-For 를 어떤 형식으로 넘기는지 확인 후 제거
-            if (request.getHeader("X-Debug-Xff") != null) {
-                log.info("XFF-PROBE xff=[{}] remoteAddr={}", request.getHeader("X-Forwarded-For"), request.getRemoteAddr());
-            }
             if (!ipWhitelistService.isAllowed(clientIp)) {
                 log.warn("허용되지 않은 IP에서 QR 접근 시도: {}", clientIp);
                 // QR 화면이 오류 화면에 이 PC 의 IP 를 보여줘 관리자가 허용 IP 로 등록할 수 있게 한다
@@ -60,16 +56,25 @@ public class IpWhitelistFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private String extractClientIp(HttpServletRequest request) {
-        // 프록시/로드밸런서 뒤에 있을 경우 실제 IP 추출
+    /**
+     * 접속한 PC 의 실제 공인 IP.
+     * Cloud Run 은 클라이언트가 보낸 X-Forwarded-For 뒤에 실제 접속 IP 하나만 덧붙인다
+     * (2026-09-15 운영 확인: 헤더 없음 → "223.x.x.x", 가짜 헤더 → "198.51.100.23,223.x.x.x", remoteAddr 는 169.254.x 내부 주소).
+     * 앞쪽 값은 누구나 임의로 넣을 수 있어 허용 IP 를 사칭해 우회할 수 있으므로 반드시 맨 뒤 값을 쓴다.
+     * X-Real-IP 도 클라이언트가 조작할 수 있어 쓰지 않는다. 앞단에 로드밸런서를 추가하면
+     * "<클라이언트 IP>,<로드밸런서 IP>" 가 붙어 맨 뒤가 로드밸런서 IP 가 되므로 이 로직을 다시 맞춰야 한다.
+     */
+    static String extractClientIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
+        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+            String[] hops = xForwardedFor.split(",");
+            for (int i = hops.length - 1; i >= 0; i--) {
+                String hop = hops[i].trim();
+                if (!hop.isEmpty()) {
+                    return hop;
+                }
+            }
         }
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
-        }
-        return request.getRemoteAddr();
+        return request.getRemoteAddr();   // 프록시 없이 직접 접속(로컬 개발)
     }
 }

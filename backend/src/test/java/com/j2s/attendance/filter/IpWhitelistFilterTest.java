@@ -74,16 +74,46 @@ class IpWhitelistFilterTest {
     }
 
     @Test
-    void X_Forwarded_For_헤더가_있으면_그_IP로_검사한다() throws Exception {
+    void X_Forwarded_For_는_Cloud_Run이_맨_뒤에_붙인_실제_접속_IP로_검사한다() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/qr/generate");
-        request.setRemoteAddr("10.0.0.1"); // 프록시 IP (실제 클라이언트 아님)
-        request.addHeader("X-Forwarded-For", "203.0.113.5, 10.0.0.1");
+        request.setRemoteAddr("169.254.169.126"); // Cloud Run 내부 주소 (실제 클라이언트 아님)
+        request.addHeader("X-Forwarded-For", "198.51.100.23, 203.0.113.5");
         MockHttpServletResponse response = new MockHttpServletResponse();
         when(ipWhitelistService.isAllowed("203.0.113.5")).thenReturn(true);
 
         filter.doFilter(request, response, filterChain);
 
         verify(filterChain).doFilter(request, response);
-        verify(ipWhitelistService, never()).isAllowed("10.0.0.1");
+        verify(ipWhitelistService, never()).isAllowed("198.51.100.23");
+    }
+
+    @Test
+    void X_Forwarded_For_앞에_허용_IP를_끼워_넣어도_우회할_수_없다() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/qr/generate");
+        request.setRemoteAddr("169.254.169.126");
+        request.addHeader("X-Forwarded-For", "192.168.0.10,1.2.3.4");   // 192.168.0.10 = 허용 IP 사칭
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(ipWhitelistService.isAllowed("1.2.3.4")).thenReturn(false);
+
+        filter.doFilter(request, response, filterChain);
+
+        assertThat(response.getStatus()).isEqualTo(403);
+        assertThat(response.getContentAsString()).contains("\"ip\":\"1.2.3.4\"");
+        verify(ipWhitelistService, never()).isAllowed("192.168.0.10");
+        verify(filterChain, never()).doFilter(request, response);
+    }
+
+    @Test
+    void X_Real_IP_헤더는_조작_가능하므로_무시한다() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/qr/generate");
+        request.setRemoteAddr("1.2.3.4");
+        request.addHeader("X-Real-IP", "192.168.0.10");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        when(ipWhitelistService.isAllowed("1.2.3.4")).thenReturn(false);
+
+        filter.doFilter(request, response, filterChain);
+
+        assertThat(response.getStatus()).isEqualTo(403);
+        verify(ipWhitelistService, never()).isAllowed("192.168.0.10");
     }
 }
