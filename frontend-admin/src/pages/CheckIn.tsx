@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import jsQR from 'jsqr';
-import { LogIn, LogOut, X } from 'lucide-react';
+import { Copy, EyeOff, LogIn, LogOut, X } from 'lucide-react';
 import { deviceApi, attendanceApi } from '../services/api';
 import { getOrCreateDeviceId } from '../services/deviceId';
+import { detectMobileBrowser, isPrivateBrowsing, type MobileBrowser } from '../services/privateMode';
 import { AlertBanner, Button, StatusPill, inputClassLg } from '../components/dashboard';
 import { AutumnLeaves } from '../components/decor';
 
@@ -39,6 +40,34 @@ function formatTime(iso: string): string {
 
 const deviceId = getOrCreateDeviceId();
 
+// 시크릿 모드에서 일반 모드로 돌아가는 방법 (브라우저별)
+const PRIVATE_MODE_GUIDE: Record<MobileBrowser, { name: string; steps: string[] }> = {
+  safari: {
+    name: 'Safari',
+    steps: ['화면 아래 탭 버튼(네모 두 개)을 누르세요', '아래쪽 "개인정보 보호"를 눌러 일반 탭 그룹(예: "시작 페이지")으로 바꾸세요', '일반 탭에서 현장 QR을 다시 스캔하세요'],
+  },
+  chrome: {
+    name: 'Chrome',
+    steps: ['시크릿 탭을 닫으세요', '일반 탭에서 현장 QR을 다시 스캔하세요', '카메라에서 링크를 열 때 "시크릿 탭에서 열기"는 누르지 마세요'],
+  },
+  samsung: {
+    name: '삼성 인터넷',
+    steps: ['화면 아래 탭 버튼을 누르세요', '"비밀 모드 끄기"를 누르세요', '일반 모드에서 현장 QR을 다시 스캔하세요'],
+  },
+  firefox: {
+    name: 'Firefox',
+    steps: ['사생활 보호 탭을 닫으세요', '일반 탭에서 현장 QR을 다시 스캔하세요'],
+  },
+  inapp: {
+    name: '앱 안의 브라우저',
+    steps: ['화면 오른쪽 위 메뉴(⋮ 또는 ···)를 누르세요', '"다른 브라우저로 열기"(Safari·Chrome 등)를 누르세요', '열린 일반 창에서 등록을 진행하세요'],
+  },
+  other: {
+    name: '브라우저',
+    steps: ['시크릿(개인정보 보호) 모드를 끄세요', '일반 창에서 현장 QR을 다시 스캔하세요'],
+  },
+};
+
 export default function CheckIn() {
   const [isMobile] = useState(isLikelyMobile);
   const [stage, setStage] = useState<Stage>('loading');
@@ -50,6 +79,10 @@ export default function CheckIn() {
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  // 시크릿 모드면 기기 ID 가 저장되지 않아 창을 닫을 때마다 새 기기로 인식되므로, 등록 전에 일반 모드로 안내한다
+  const [privateMode, setPrivateMode] = useState<boolean | null>(null);   // null = 판별 중
+  const [ignorePrivateMode, setIgnorePrivateMode] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   // 현장 QR을 스마트폰 카메라로 찍어 들어온 경우 ?t= 로 토큰이 딸려온다.
   // 이 토큰이 있으면 페이지 안에서 다시 카메라를 열 필요 없이 버튼만 누르면 바로 처리된다.
@@ -87,6 +120,21 @@ export default function CheckIn() {
     if (!isMobile) return;
     refreshStatus();
   }, [isMobile, refreshStatus]);
+
+  // 시크릿 모드 판별은 1초 남짓 IndexedDB 쓰기를 측정하므로, 등록이 필요한 기기일 때만 한 번 실행한다
+  useEffect(() => {
+    if (stage !== 'not_registered' || privateMode !== null) return;
+    isPrivateBrowsing().then(setPrivateMode);
+  }, [stage, privateMode]);
+
+  const copyCheckinLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/checkin`);
+      setLinkCopied(true);
+    } catch {
+      setLinkCopied(false);
+    }
+  };
 
   // 승인 대기 중이면 5초마다 자동 재확인
   useEffect(() => {
@@ -223,11 +271,49 @@ export default function CheckIn() {
     );
   }
 
-  if (stage === 'loading') {
+  if (stage === 'loading' || (stage === 'not_registered' && privateMode === null)) {
     return (
       <Shell>
         <Brand />
         <p className="text-[13px] text-slate-500">확인 중...</p>
+      </Shell>
+    );
+  }
+
+  if (stage === 'not_registered' && privateMode && !ignorePrivateMode) {
+    const guide = PRIVATE_MODE_GUIDE[detectMobileBrowser()];
+    return (
+      <Shell>
+        <Brand />
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+          <EyeOff className="h-6 w-6" />
+        </span>
+        <h2 className="text-lg font-bold text-slate-900">시크릿 모드에서는 등록할 수 없어요</h2>
+        <p className="text-[13px] leading-relaxed text-slate-500">
+          시크릿(개인정보 보호) 모드에서는 이 휴대폰 정보가 저장되지 않아, 창을 닫으면 등록이 사라지고 매번 다시 등록·승인을 받아야 합니다.
+          <b className="text-slate-700"> 일반 모드로 바꾼 뒤 등록해주세요.</b>
+        </p>
+        <div className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+          <div className="mb-2 text-[12px] font-bold text-slate-700">{guide.name} 일반 모드로 바꾸는 방법</div>
+          <ol className="flex flex-col gap-1.5">
+            {guide.steps.map((step, i) => (
+              <li key={step} className="flex gap-2 text-[13px] leading-snug text-slate-600">
+                <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-brand-100 text-[11px] font-bold text-brand-700">{i + 1}</span>
+                {step}
+              </li>
+            ))}
+          </ol>
+        </div>
+        <Button variant="ghost" size="lg" onClick={copyCheckinLink} className="w-full">
+          <Copy className="h-4 w-4" /> {linkCopied ? '주소 복사됨 — 일반 창에 붙여넣기' : '등록 페이지 주소 복사'}
+        </Button>
+        <button
+          type="button"
+          onClick={() => setIgnorePrivateMode(true)}
+          className="text-[12px] text-slate-400 underline underline-offset-2"
+        >
+          일반 모드인데도 이 안내가 보이나요? 그대로 등록하기
+        </button>
       </Shell>
     );
   }
