@@ -68,6 +68,8 @@ class IpWhitelistFilterTest {
         filter.doFilter(request, response, filterChain);
 
         assertThat(response.getStatus()).isEqualTo(403);
+        assertThat(response.getContentType()).startsWith("application/json");
+        assertThat(response.getContentAsString()).contains("\"code\":\"IP_NOT_ALLOWED\"").contains("\"ip\":\"1.2.3.4\"");
         verify(filterChain, never()).doFilter(request, response);
     }
 

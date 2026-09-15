@@ -61,7 +61,7 @@ cd frontend-admin; npm run dev                    # http://localhost:5173
 
 | 메서드/경로 | 인증 | 비고 |
 |---|---|---|
-| `GET /api/qr/generate` | IP 화이트리스트 | `{token, expiresAt, expiresInSeconds}` |
+| `GET /api/qr/generate` | IP 화이트리스트 | `{token, expiresAt, expiresInSeconds}`. 허용되지 않은 IP 는 `IpWhitelistFilter` 가 403 `{code: "IP_NOT_ALLOWED", message, ip}` (UTF-8 JSON, CORS 헤더 포함) — `QrScreen.tsx` 가 이 코드로 "QR을 표시할 수 없는 PC" 오류 화면과 접속 IP 를 보여준다 |
 | `GET /api/qr/status?token=` | IP 화이트리스트 | `{active}` — 미사용·미만료 여부, 상태를 바꾸지 않는 조회 전용 |
 | `POST /api/devices/register` | 없음 | 201, `DeviceRegisterDto` 검증 |
 | `GET /api/devices/status?hardwareId=` | 없음 | `{status, workerName, checkedInToday, checkInAt, checkOutAt}` / `NOT_REGISTERED` — `checkInAt`/`checkOutAt`은 당일 최신 기록, 없으면 `null` |
